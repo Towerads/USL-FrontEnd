@@ -17,8 +17,8 @@ export function BottomNav({ userType = "default" }: BottomNavProps) {
         basePath: "/advertiser",
         tabs: [
           { id: "dashboard", href: "/advertiser", icon: BarChartOutlined, label: "Дашборд" },
-          { id: "campaigns", href: "/advertiser/campaigns", icon: PlayCircleOutlined, label: "Кампании" },
-          { id: "creatives", href: "/advertiser/creatives", icon: VideoCameraOutlined, label: "Креативы" },
+          { id: "stats", href: "/advertiser/stats", icon: RiseOutlined, label: "Статистика" },
+          { id: "wallet", href: "/wallet", icon: WalletOutlined, label: "Кошелёк" },
           { id: "profile", href: "/advertiser/profile", icon: UserOutlined, label: "Профиль" },
         ],
       }
@@ -29,8 +29,8 @@ export function BottomNav({ userType = "default" }: BottomNavProps) {
         basePath: "/publisher",
         tabs: [
           { id: "dashboard", href: "/publisher", icon: RiseOutlined, label: "Дашборд" },
-          { id: "channels", href: "/publisher/channels", icon: PlayCircleOutlined, label: "Каналы" },
           { id: "stats", href: "/publisher/stats", icon: BarChartOutlined, label: "Статистика" },
+          { id: "wallet", href: "/wallet", icon: WalletOutlined, label: "Кошелёк" },
           { id: "profile", href: "/publisher/profile", icon: UserOutlined, label: "Профиль" },
         ],
       }
@@ -40,7 +40,6 @@ export function BottomNav({ userType = "default" }: BottomNavProps) {
       basePath: "",
       tabs: [
         { id: "wallet", href: "/wallet", icon: WalletOutlined, label: "Кошелёк" },
-        { id: "campaigns", href: "/campaigns", icon: PlayCircleOutlined, label: "Кампании" },
         { id: "stats", href: "/stats", icon: BarChartOutlined, label: "Статистика" },
         { id: "profile", href: "/profile", icon: UserOutlined, label: "Профиль" },
       ],

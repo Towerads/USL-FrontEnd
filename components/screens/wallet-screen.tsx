@@ -9,56 +9,39 @@ export function WalletScreen() {
   return (
     <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto', paddingBottom: '100px' }}>
       <Space direction="vertical" size={20} style={{ width: '100%' }}>
-        {/* Balance Card */}
-        <Card style={{ 
-          background: 'linear-gradient(135deg, #1677ff 0%, #4096ff 100%)', 
-          border: 'none', 
-          boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)', 
-          borderRadius: '12px' 
-        }}>
-          <Space direction="vertical" size={16} style={{ width: '100%' }}>
-            <div>
-              <Text style={{ fontSize: '14px', color: 'rgba(255,255,255,0.8)', fontWeight: 500 }}>Основной баланс</Text>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '4px' }}>
-                <Title level={1} style={{ margin: 0, fontSize: '42px', fontWeight: 700, color: '#fff' }}>1,234.56</Title>
-                <Text style={{ fontSize: '20px', fontWeight: 600, color: 'rgba(255,255,255,0.9)' }}>USDT</Text>
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', width: '100%' }}>
-              <Button 
-                type="default" 
-                icon={<ArrowUpOutlined />} 
-                size="large" 
-                block
-                style={{ background: '#fff', borderColor: '#fff', color: '#1677ff', fontWeight: 600 }}
-              >
-                Пополнить
-              </Button>
-              <Button 
-                icon={<ArrowDownOutlined />} 
-                size="large" 
-                block
-                style={{ background: 'rgba(255,255,255,0.2)', borderColor: 'transparent', color: '#fff', fontWeight: 600 }}
-              >
-                Вывести
-              </Button>
-            </div>
-          </Space>
-        </Card>
-
-        {/* Additional Balances */}
+        {/* Balance Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
           <Card>
-            <Text type="secondary" style={{ fontSize: '13px', display: 'block', marginBottom: '8px' }}>Замороженные</Text>
-            <div style={{ fontSize: '26px', fontWeight: 700 }}>156.80</div>
+            <Text type="secondary" style={{ fontSize: '13px', display: 'block', marginBottom: '8px' }}>Доступно</Text>
+            <div style={{ fontSize: '28px', fontWeight: 700, color: '#1677ff' }}>1,234.56</div>
             <Text type="secondary" style={{ fontSize: '14px' }}>USDT</Text>
           </Card>
           <Card>
-            <Text type="secondary" style={{ fontSize: '13px', display: 'block', marginBottom: '8px' }}>Доход</Text>
-            <div style={{ fontSize: '26px', fontWeight: 700, color: '#52c41a' }}>+89.20</div>
+            <Text type="secondary" style={{ fontSize: '13px', display: 'block', marginBottom: '8px' }}>Заморожено</Text>
+            <div style={{ fontSize: '28px', fontWeight: 700, color: '#faad14' }}>156.80</div>
             <Text type="secondary" style={{ fontSize: '14px' }}>USDT</Text>
           </Card>
+        </div>
+
+        {/* Action Buttons */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <Button 
+            type="primary" 
+            icon={<ArrowUpOutlined />} 
+            size="large" 
+            block
+            style={{ fontWeight: 600, height: '48px' }}
+          >
+            Пополнить
+          </Button>
+          <Button 
+            icon={<ArrowDownOutlined />} 
+            size="large" 
+            block
+            style={{ fontWeight: 600, height: '48px' }}
+          >
+            Вывести
+          </Button>
         </div>
 
         {/* Recent Transactions */}

@@ -1,7 +1,7 @@
 "use client"
 
-import { Card, Button, Badge, Space, Typography, Statistic, Row, Col } from 'antd';
-import { BellOutlined, PlusOutlined, RiseOutlined, DollarOutlined, EyeOutlined, UserOutlined, PlayCircleOutlined } from '@ant-design/icons';
+import { Card, Button, Badge, Space, Typography, Statistic, Row, Col, Tooltip } from 'antd';
+import { BellOutlined, PlusOutlined, RiseOutlined, DollarOutlined, EyeOutlined, UserOutlined, PlayCircleOutlined, ClockCircleOutlined, ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
 
@@ -28,41 +28,98 @@ export function PublisherDashboard() {
   ]
 
   return (
-    <div style={{ padding: '16px' }}>
-      <Space direction="vertical" size="large" style={{ width: '100%' }}>
-        {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <Title level={2} style={{ margin: 0 }}>Паблишер</Title>
-            <Text type="secondary">UP Stream Lab</Text>
-          </div>
-          <Button type="text" shape="circle" icon={<BellOutlined style={{ fontSize: '20px' }} />} />
+    <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
+      <Space direction="vertical" size={20} style={{ width: '100%' }}>
+        {/* Header with Notification */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+          <Title level={2} style={{ margin: 0, fontWeight: 700, fontSize: '28px' }}>Дашборд</Title>
+          <Badge dot style={{ boxShadow: '0 0 0 4px #fff' }}>
+            <Button type="text" shape="circle" icon={<BellOutlined style={{ fontSize: '20px' }} />} />
+          </Badge>
         </div>
+
+        {/* Balance Cards with 5-day Freeze */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <Card>
+            <Text type="secondary" style={{ fontSize: '13px', display: 'block', marginBottom: '8px' }}>Доступно</Text>
+            <div style={{ fontSize: '28px', fontWeight: 700, color: '#1677ff' }}>234.50</div>
+            <Text type="secondary" style={{ fontSize: '14px' }}>USDT</Text>
+          </Card>
+          <Card>
+            <Tooltip title="Заработанные средства замораживаются на 5 дней">
+              <div>
+                <Text type="secondary" style={{ fontSize: '13px', display: 'block', marginBottom: '8px' }}>
+                  Заморожено <ClockCircleOutlined style={{ fontSize: '12px', marginLeft: '4px' }} />
+                </Text>
+                <div style={{ fontSize: '28px', fontWeight: 700, color: '#faad14' }}>156.80</div>
+                <Text type="secondary" style={{ fontSize: '14px' }}>USDT</Text>
+              </div>
+            </Tooltip>
+          </Card>
+        </div>
+
+        {/* Action Buttons */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <Button 
+            type="primary" 
+            icon={<ArrowUpOutlined />} 
+            size="large" 
+            block
+            style={{ fontWeight: 600, height: '48px' }}
+          >
+            Пополнить
+          </Button>
+          <Button 
+            icon={<ArrowDownOutlined />} 
+            size="large" 
+            block
+            style={{ fontWeight: 600, height: '48px' }}
+          >
+            Вывести
+          </Button>
+        </div>
+
+        {/* 5-Day Freeze Info */}
+        <Card style={{ background: 'rgba(250, 173, 20, 0.05)', borderColor: '#faad14' }}>
+          <Space direction="vertical" size={12} style={{ width: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <ClockCircleOutlined style={{ fontSize: '20px', color: '#faad14' }} />
+              <Text strong style={{ fontSize: '15px' }}>Замороженные заработки</Text>
+            </div>
+            <div style={{ paddingLeft: '28px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <Text type="secondary" style={{ fontSize: '14px' }}>Разморозка через 1 день:</Text>
+                <Text strong style={{ fontSize: '14px' }}>45.20 USDT</Text>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <Text type="secondary" style={{ fontSize: '14px' }}>Разморозка через 3 дня:</Text>
+                <Text strong style={{ fontSize: '14px' }}>67.80 USDT</Text>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Text type="secondary" style={{ fontSize: '14px' }}>Разморозка через 5 дней:</Text>
+                <Text strong style={{ fontSize: '14px' }}>43.80 USDT</Text>
+              </div>
+            </div>
+            <Text type="secondary" style={{ fontSize: '13px', paddingLeft: '28px' }}>
+              💡 Все заработанные средства замораживаются на 5 дней для защиты от мошенничества
+            </Text>
+          </Space>
+        </Card>
 
         {/* Quick Stats */}
         <Row gutter={12}>
           <Col span={12}>
-            <Card style={{ background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%)' }}>
-              <Statistic
-                title="Доход"
-                value={391.30}
-                precision={2}
-                prefix="+"
-                suffix="USDT"
-                valueStyle={{ fontSize: '24px', fontWeight: 'bold', color: '#10B981' }}
-              />
-              <Text type="secondary" style={{ fontSize: '12px' }}>USDT за месяц</Text>
+            <Card>
+              <Text type="secondary" style={{ fontSize: '13px', display: 'block', marginBottom: '8px' }}>Доход за месяц</Text>
+              <div style={{ fontSize: '28px', fontWeight: 700, color: '#52c41a' }}>+391.30</div>
+              <Text type="secondary" style={{ fontSize: '14px' }}>USDT</Text>
             </Card>
           </Col>
           <Col span={12}>
-            <Card style={{ background: 'linear-gradient(135deg, rgba(65, 105, 225, 0.1) 0%, rgba(65, 105, 225, 0.05) 100%)' }}>
-              <Statistic
-                title="Подписчики"
-                value="74.1K"
-                prefix={<UserOutlined />}
-                valueStyle={{ fontSize: '24px', fontWeight: 'bold' }}
-              />
-              <Text type="success" style={{ fontSize: '12px' }}>+2.3K за месяц</Text>
+            <Card>
+              <Text type="secondary" style={{ fontSize: '13px', display: 'block', marginBottom: '8px' }}>Подписчики</Text>
+              <div style={{ fontSize: '28px', fontWeight: 700 }}>74.1K</div>
+              <Text style={{ fontSize: '14px', color: '#52c41a' }}>+2.3K</Text>
             </Card>
           </Col>
         </Row>

@@ -1,7 +1,7 @@
 "use client"
 
 import { Card, Button, Avatar, Switch, Space, Typography, Radio } from 'antd';
-import { SettingOutlined, UserOutlined, RightOutlined, StarOutlined, FileTextOutlined, SafetyOutlined, QuestionCircleOutlined, BulbOutlined, RocketOutlined, TeamOutlined } from '@ant-design/icons';
+import { SettingOutlined, UserOutlined, RightOutlined, StarOutlined, FileTextOutlined, SafetyOutlined, QuestionCircleOutlined, BulbOutlined, RocketOutlined, TeamOutlined, BellOutlined, WalletOutlined } from '@ant-design/icons';
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -154,6 +154,47 @@ export function ProfileScreen() {
               </Link>
             )
           })}
+          <Card>
+            <Space direction="vertical" size={0} style={{ width: '100%' }}>
+              <Button
+                type="text"
+                block
+                href="/telegram-integration"
+                style={{
+                  height: '56px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0 16px',
+                  textAlign: 'left',
+                }}
+              >
+                <Space>
+                  <BellOutlined style={{ fontSize: '20px' }} />
+                  <Text strong style={{ fontSize: '15px' }}>Telegram уведомления</Text>
+                </Space>
+                <RightOutlined style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }} />
+              </Button>
+              <Button
+                type="text"
+                block
+                style={{
+                  height: '56px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0 16px',
+                  textAlign: 'left',
+                }}
+              >
+                <Space>
+                  <WalletOutlined style={{ fontSize: '20px' }} />
+                  <Text strong style={{ fontSize: '15px' }}>Кошелёк</Text>
+                </Space>
+                <RightOutlined style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }} />
+              </Button>
+            </Space>
+          </Card>
         </Space>
 
         {/* App Info */}

@@ -1,5 +1,6 @@
 import { AdvertiserDashboard } from "@/components/advertiser/advertiser-dashboard"
 import { BottomNav } from "@/components/bottom-nav"
+import { FloatingSupportButton } from "@/components/floating-support-button"
 
 export default function AdvertiserPage() {
   return (
@@ -7,6 +8,7 @@ export default function AdvertiserPage() {
       <div className="flex-1 overflow-y-auto pb-20">
         <AdvertiserDashboard />
       </div>
+      <FloatingSupportButton />
       <BottomNav userType="advertiser" />
     </div>
   )
