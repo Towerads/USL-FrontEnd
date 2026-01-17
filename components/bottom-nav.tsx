@@ -1,6 +1,6 @@
 "use client"
 
-import { WalletOutlined, PlayCircleOutlined, BarChartOutlined, UserOutlined, VideoCameraOutlined, RiseOutlined } from '@ant-design/icons';
+import { UserOutlined, VideoCameraOutlined, BarChartOutlined, AppstoreOutlined, DashboardOutlined } from '@ant-design/icons';
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
@@ -16,10 +16,10 @@ export function BottomNav({ userType = "default" }: BottomNavProps) {
       return {
         basePath: "/advertiser",
         tabs: [
-          { id: "dashboard", href: "/advertiser", icon: BarChartOutlined, label: "Дашборд" },
-          { id: "stats", href: "/advertiser/stats", icon: RiseOutlined, label: "Статистика" },
-          { id: "wallet", href: "/wallet", icon: WalletOutlined, label: "Кошелёк" },
-          { id: "profile", href: "/advertiser/profile", icon: UserOutlined, label: "Профиль" },
+          { id: "profile", href: "/profile", icon: UserOutlined, label: "Профиль" },
+          { id: "creatives", href: "/creatives", icon: VideoCameraOutlined, label: "Креативы" },
+          { id: "stats", href: "/stats", icon: BarChartOutlined, label: "Статистика" },
+          { id: "channels", href: "/channels-catalog", icon: AppstoreOutlined, label: "Каталог" },
         ],
       }
     }
@@ -28,10 +28,10 @@ export function BottomNav({ userType = "default" }: BottomNavProps) {
       return {
         basePath: "/publisher",
         tabs: [
-          { id: "dashboard", href: "/publisher", icon: RiseOutlined, label: "Дашборд" },
-          { id: "stats", href: "/publisher/stats", icon: BarChartOutlined, label: "Статистика" },
-          { id: "wallet", href: "/wallet", icon: WalletOutlined, label: "Кошелёк" },
-          { id: "profile", href: "/publisher/profile", icon: UserOutlined, label: "Профиль" },
+          { id: "profile", href: "/profile", icon: UserOutlined, label: "Профиль" },
+          { id: "dashboard", href: "/publisher", icon: DashboardOutlined, label: "Дашборд" },
+          { id: "stats", href: "/stats", icon: BarChartOutlined, label: "Статистика" },
+          { id: "channels", href: "/channels-catalog", icon: AppstoreOutlined, label: "Каталог" },
         ],
       }
     }
@@ -39,8 +39,6 @@ export function BottomNav({ userType = "default" }: BottomNavProps) {
     return {
       basePath: "",
       tabs: [
-        { id: "wallet", href: "/wallet", icon: WalletOutlined, label: "Кошелёк" },
-        { id: "stats", href: "/stats", icon: BarChartOutlined, label: "Статистика" },
         { id: "profile", href: "/profile", icon: UserOutlined, label: "Профиль" },
       ],
     }
