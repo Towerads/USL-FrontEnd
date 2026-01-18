@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TowerAds SDK Examples</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .example {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; }
+        h2 { color: #666; margin-top: 0; }
+        pre {
+            background: #f8f8f8;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        button {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #059669;
+        }
+        .analytics {
+            background: #f0f9ff;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        .status.success { background: #d1fae5; color: #065f46; }
+        .status.error { background: #fee2e2; color: #991b1b; }
+        .status.loading { background: #fef3c7; color: #92400e; }
+    </style>
+</head>
+<body>
+    <h1>🗼 TowerAds SDK Examples</h1>
+    <p>Examples demonstrating both legacy mode and new mediation features.</p>
+
+    <!-- Example 1: Basic Usage (Legacy Mode) -->
+    <div class="example">
+        <h2>Example 1: Basic Usage (Legacy Mode)</h2>
+        <p>Simple integration with only Tower network - backward compatible.</p>
+        <pre><code>const ad = new TowerAds({
+    apiKey: 'tower_xxx',
+    placementId: 'main',
+    onAdLoaded: (network) => {
+        console.log('Ad loaded from:', network);
+    },
+    onRewardEarned: (reward) => {
+        console.log('Reward:', reward);
+    }
+});
+
+ad.loadAd().then(() => ad.showAd());</code></pre>
+        <button onclick="example1Load()">Load Ad</button>
+        <button onclick="example1Show()">Show Ad</button>
+        <div id="example1-status"></div>
+    </div>
+
+    <!-- Example 2: Mediation with Waterfall -->
+    <div class="example">
+        <h2>Example 2: Mediation with Waterfall</h2>
+        <p>Multiple ad networks with automatic fallback (Tower → Telegram → Monetag → Yandex).</p>
+        <pre><code>const ad = new TowerAds({
+    apiKey: 'tower_xxx',
+    placementId: 'main',
+    
+    mediation: {
+        enabled: true,
+        waterfall: ['tower', 'telegram', 'monetag', 'yandex'],
+        networks: {
+            telegram: {
+                blockId: 'your-telegram-block-id'
+            },
+            monetag: {
+                zone: 123456,
+                sdk: 'show_123456'
+            },
+            yandex: {
+                blockId: 'R-A-123456-1'
+            }
+        }
+    },
+    
+    onAdLoaded: (network) => {
+        console.log('Ad loaded from:', network);
+    }
+});
+
+ad.loadAd().then(() => ad.showAd());</code></pre>
+        <button onclick="example2Load()">Load Ad (Mediation)</button>
+        <button onclick="example2Show()">Show Ad</button>
+        <button onclick="example2Analytics()">View Analytics</button>
+        <div id="example2-status"></div>
+        <div id="example2-analytics" class="analytics" style="display:none;"></div>
+    </div>
+
+    <!-- Example 3: Custom Waterfall Priority -->
+    <div class="example">
+        <h2>Example 3: Custom Waterfall Priority</h2>
+        <p>Customize network priority based on your eCPM data.</p>
+        <pre><code>const ad = new TowerAds({
+    apiKey: 'tower_xxx',
+    placementId: 'main',
+    
+    mediation: {
+        enabled: true,
+        // High eCPM networks first
+        waterfall: ['yandex', 'tower', 'telegram', 'monetag'],
+        networks: {
+            yandex: { blockId: 'R-A-xxx' },
+            telegram: { blockId: 'xxx' },
+            monetag: { zone: 123, sdk: 'show_123' }
+        }
+    }
+});</code></pre>
+        <button onclick="example3Load()">Load Ad (Custom Priority)</button>
+        <button onclick="example3Show()">Show Ad</button>
+        <div id="example3-status"></div>
+    </div>
+
+    <!-- Example 4: Tower Only with Mediation -->
+    <div class="example">
+        <h2>Example 4: Tower Only (Mediation Mode)</h2>
+        <p>Use mediation architecture but with Tower network only - useful for future expansion.</p>
+        <pre><code>const ad = new TowerAds({
+    apiKey: 'tower_xxx',
+    placementId: 'main',
+    
+    mediation: {
+        enabled: true,
+        waterfall: ['tower']
+        // No external networks configured
+    }
+});</code></pre>
+        <button onclick="example4Load()">Load Ad (Tower Only)</button>
+        <button onclick="example4Show()">Show Ad</button>
+        <div id="example4-status"></div>
+    </div>
+
+    <!-- Example 5: Analytics & Monitoring -->
+    <div class="example">
+        <h2>Example 5: Analytics & Monitoring</h2>
+        <p>Track which networks are performing and monitor load times.</p>
+        <pre><code>const ad = new TowerAds({
+    apiKey: 'tower_xxx',
+    placementId: 'main',
+    mediation: {
+        enabled: true,
+        waterfall: ['tower', 'telegram', 'monetag']
+    },
+    onAdLoaded: (network) => {
+        const analytics = ad.getAnalytics();
+        console.log('Loaded from:', network);
+        console.log('Attempts:', analytics.attempts);
+        
+        // Track to your analytics
+        trackEvent('ad_loaded', {
+            network: network,
+            attempts: analytics.attempts.length
+        });
+    }
+});
+
+// After showing ad
+ad.showAd().then(() => {
+    const analytics = ad.getAnalytics();
+    console.log('Show stats:', analytics.lastShow);
+});</code></pre>
+        <button onclick="example5Load()">Load & Track</button>
+        <button onclick="example5Show()">Show & Track</button>
+        <div id="example5-status"></div>
+        <div id="example5-analytics" class="analytics" style="display:none;"></div>
+    </div>
+
+    <script src="tower-ads.js"></script>
+    <script>
+        // Example 1: Basic Usage
+        let ad1;
+        function example1Load() {
+            const status = document.getElementById('example1-status');
+            status.innerHTML = '<span class="status loading">Loading...</span>';
+            
+            ad1 = new TowerAds({
+                apiKey: 'demo_key',
+                placementId: 'main',
+                onAdLoaded: (network) => {
+                    status.innerHTML = '<span class="status success">✓ Ad loaded from: ' + network + '</span>';
+                },
+                onAdFailedToLoad: (error) => {
+                    status.innerHTML = '<span class="status error">✗ Failed: ' + error.message + '</span>';
+                }
+            });
+            
+            ad1.loadAd();
+        }
+
+        function example1Show() {
+            if (!ad1 || !ad1.isReady()) {
+                alert('Please load ad first!');
+                return;
+            }
+            ad1.showAd();
+        }
+
+        // Example 2: Mediation
+        let ad2;
+        function example2Load() {
+            const status = document.getElementById('example2-status');
+            status.innerHTML = '<span class="status loading">Loading with mediation...</span>';
+            
+            ad2 = new TowerAds({
+                apiKey: 'demo_key',
+                placementId: 'main',
+                mediation: {
+                    enabled: true,
+                    waterfall: ['tower', 'telegram', 'monetag', 'yandex'],
+                    networks: {
+                        telegram: { blockId: 'demo-block' },
+                        monetag: { zone: 123, sdk: 'show_123' },
+                        yandex: { blockId: 'R-A-123' }
+                    }
+                },
+                onAdLoaded: (network) => {
+                    status.innerHTML = '<span class="status success">✓ Ad loaded from: ' + network + '</span>';
+                },
+                onAdFailedToLoad: (error) => {
+                    status.innerHTML = '<span class="status error">✗ Failed: ' + error.message + '</span>';
+                }
+            });
+            
+            ad2.loadAd();
+        }
+
+        function example2Show() {
+            if (!ad2 || !ad2.isReady()) {
+                alert('Please load ad first!');
+                return;
+            }
+            ad2.showAd();
+        }
+
+        function example2Analytics() {
+            if (!ad2) {
+                alert('Please load ad first!');
+                return;
+            }
+            const analytics = ad2.getAnalytics();
+            const div = document.getElementById('example2-analytics');
+            div.style.display = 'block';
+            div.innerHTML = '<strong>Analytics:</strong><br>' + JSON.stringify(analytics, null, 2);
+        }
+
+        // Example 3: Custom Priority
+        let ad3;
+        function example3Load() {
+            const status = document.getElementById('example3-status');
+            status.innerHTML = '<span class="status loading">Loading...</span>';
+            
+            ad3 = new TowerAds({
+                apiKey: 'demo_key',
+                placementId: 'main',
+                mediation: {
+                    enabled: true,
+                    waterfall: ['yandex', 'tower', 'telegram', 'monetag'],
+                    networks: {
+                        yandex: { blockId: 'R-A-xxx' },
+                        telegram: { blockId: 'xxx' },
+                        monetag: { zone: 123, sdk: 'show_123' }
+                    }
+                },
+                onAdLoaded: (network) => {
+                    status.innerHTML = '<span class="status success">✓ Loaded from: ' + network + ' (custom priority)</span>';
+                }
+            });
+            
+            ad3.loadAd();
+        }
+
+        function example3Show() {
+            if (!ad3 || !ad3.isReady()) {
+                alert('Please load ad first!');
+                return;
+            }
+            ad3.showAd();
+        }
+
+        // Example 4: Tower Only
+        let ad4;
+        function example4Load() {
+            const status = document.getElementById('example4-status');
+            status.innerHTML = '<span class="status loading">Loading...</span>';
+            
+            ad4 = new TowerAds({
+                apiKey: 'demo_key',
+                placementId: 'main',
+                mediation: {
+                    enabled: true,
+                    waterfall: ['tower']
+                },
+                onAdLoaded: (network) => {
+                    status.innerHTML = '<span class="status success">✓ Loaded from: ' + network + '</span>';
+                }
+            });
+            
+            ad4.loadAd();
+        }
+
+        function example4Show() {
+            if (!ad4 || !ad4.isReady()) {
+                alert('Please load ad first!');
+                return;
+            }
+            ad4.showAd();
+        }
+
+        // Example 5: Analytics
+        let ad5;
+        function example5Load() {
+            const status = document.getElementById('example5-status');
+            const analyticsDiv = document.getElementById('example5-analytics');
+            status.innerHTML = '<span class="status loading">Loading...</span>';
+            
+            ad5 = new TowerAds({
+                apiKey: 'demo_key',
+                placementId: 'main',
+                mediation: {
+                    enabled: true,
+                    waterfall: ['tower', 'telegram', 'monetag']
+                },
+                onAdLoaded: (network) => {
+                    const analytics = ad5.getAnalytics();
+                    status.innerHTML = '<span class="status success">✓ Loaded from: ' + network + '</span>';
+                    analyticsDiv.style.display = 'block';
+                    analyticsDiv.innerHTML = '<strong>Load Analytics:</strong><br>' + 
+                        JSON.stringify(analytics.attempts, null, 2);
+                }
+            });
+            
+            ad5.loadAd();
+        }
+
+        function example5Show() {
+            if (!ad5 || !ad5.isReady()) {
+                alert('Please load ad first!');
+                return;
+            }
+            
+            ad5.showAd().then(() => {
+                const analytics = ad5.getAnalytics();
+                const analyticsDiv = document.getElementById('example5-analytics');
+                analyticsDiv.innerHTML = '<strong>Show Analytics:</strong><br>' + 
+                    JSON.stringify(analytics.lastShow, null, 2);
+            });
+        }
+    </script>
+</body>
+</html>
