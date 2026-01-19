@@ -1,6 +1,6 @@
 /**
  * TOWER Ads - Standalone JavaScript SDK with Mediation
- * Version: 2.0.0
+ * Version: 2.1.0 (Production)
  *
  * Basic Usage:
  * <script src="https://your-domain.com/tower-ads.js"></script>
@@ -14,6 +14,15 @@
  *   });
  *
  *   ad.loadAd().then(() => ad.showAd());
+ * </script>
+ *
+ * Custom API URL (optional):
+ * <script>
+ *   const ad = new TowerAds({
+ *     apiKey: 'tower_xxx',
+ *     placementId: 'placement_xxx',
+ *     apiUrl: 'https://your-custom-backend.com/api/tower-ads'
+ *   });
  * </script>
  *
  * Advanced Usage with Mediation:
@@ -94,7 +103,7 @@
             super("tower", config)
             this.apiKey = config.apiKey
             this.placementId = config.placementId
-            this.apiBaseUrl = config.apiUrl || window.location.origin + "/api/tower-ads"
+            this.apiBaseUrl = config.apiUrl || "https://towerads-backend.onrender.com/api/tower-ads"
             this.impressionId = null
             this.isReady = true
         }
@@ -147,49 +156,150 @@
 
         _showRewardedVideo() {
             return new Promise((resolve) => {
+                // Fullscreen overlay - чистый черный фон
                 var overlay = document.createElement("div")
                 overlay.style.cssText =
-                    "position:fixed;top:0;left:0;width:100%;height:100%;" +
-                    "background:rgba(0,0,0,0.95);z-index:999999;" +
-                    "display:flex;flex-direction:column;align-items:center;justify-content:center;"
+                    "position:fixed;top:0;left:0;width:100%;height:100%;z-index:999999;" +
+                    "background:#000;display:flex;align-items:center;justify-content:center;" +
+                    "animation:fadeIn 0.2s ease;"
+
+                // Video container - на весь экран без скруглений
+                var videoWrapper = document.createElement("div")
+                videoWrapper.style.cssText =
+                    "position:relative;width:100%;height:100%;"
 
                 var video = document.createElement("video")
                 video.src = this.loadedAd.media_url
-                video.style.cssText = "max-width:90%;max-height:80%;border-radius:8px;"
+                video.style.cssText =
+                    "width:100%;height:100%;object-fit:cover;background:#000;"
                 video.controls = false
                 video.autoplay = true
+                video.playsInline = true
 
-                var closeBtn = document.createElement("button")
-                closeBtn.textContent = "Skip (5s)"
-                closeBtn.style.cssText =
-                    "margin-top:20px;padding:12px 24px;background:#666;color:white;" +
-                    "border:none;border-radius:6px;cursor:not-allowed;font-size:16px;opacity:0.5;"
-                closeBtn.disabled = true
+                // Progress bar - яркий и заметный
+                var progressBar = document.createElement("div")
+                progressBar.style.cssText =
+                    "position:absolute;bottom:0;left:0;right:0;height:4px;background:rgba(255,255,255,0.15);z-index:10;"
 
-                overlay.appendChild(video)
-                overlay.appendChild(closeBtn)
-                document.body.appendChild(overlay)
+                var progressFill = document.createElement("div")
+                progressFill.style.cssText =
+                    "height:100%;width:0%;background:#fff;" +
+                    "transition:width 0.1s linear;box-shadow:0 0 8px rgba(255,255,255,0.6);"
 
-                setTimeout(() => {
-                    closeBtn.textContent = "Close"
-                    closeBtn.style.cursor = "pointer"
-                    closeBtn.style.background = "#10b981"
-                    closeBtn.style.opacity = "1"
-                    closeBtn.disabled = false
-                }, 5000)
+                progressBar.appendChild(progressFill)
 
-                video.addEventListener("ended", () => {
-                    this._handleAdComplete()
-                    document.body.removeChild(overlay)
-                    resolve({ network: "tower", completed: true })
+                // Update progress
+                video.addEventListener("timeupdate", () => {
+                    if (video.duration) {
+                        progressFill.style.width = ((video.currentTime / video.duration) * 100) + "%"
+                    }
                 })
 
-                closeBtn.addEventListener("click", () => {
-                    if (!closeBtn.disabled) {
-                        this._handleAdComplete()
+                // Skip button - круглая кнопка с круговым прогрессом
+                var skipBtn = document.createElement("button")
+                skipBtn.style.cssText =
+                    "position:absolute;top:20px;right:20px;z-index:10;" +
+                    "width:60px;height:60px;" +
+                    "background:rgba(0,0,0,0.5);color:#fff;border:none;" +
+                    "border-radius:50%;font:700 20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;" +
+                    "cursor:not-allowed;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);" +
+                    "display:flex;align-items:center;justify-content:center;" +
+                    "transition:all 0.3s ease;box-shadow:0 4px 20px rgba(0,0,0,0.5);"
+                skipBtn.disabled = true
+
+                // SVG для кругового прогресса
+                var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg")
+                svg.setAttribute("width", "60")
+                svg.setAttribute("height", "60")
+                svg.style.cssText = "position:absolute;top:0;left:0;transform:rotate(-90deg);"
+
+                var circleBg = document.createElementNS("http://www.w3.org/2000/svg", "circle")
+                circleBg.setAttribute("cx", "30")
+                circleBg.setAttribute("cy", "30")
+                circleBg.setAttribute("r", "28")
+                circleBg.setAttribute("fill", "none")
+                circleBg.setAttribute("stroke", "rgba(255,255,255,0.2)")
+                circleBg.setAttribute("stroke-width", "3")
+
+                var progressCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle")
+                progressCircle.setAttribute("cx", "30")
+                progressCircle.setAttribute("cy", "30")
+                progressCircle.setAttribute("r", "28")
+                progressCircle.setAttribute("fill", "none")
+                progressCircle.setAttribute("stroke", "#fff")
+                progressCircle.setAttribute("stroke-width", "3")
+                progressCircle.setAttribute("stroke-linecap", "round")
+
+                var circumference = 2 * Math.PI * 28
+                progressCircle.style.strokeDasharray = circumference
+                progressCircle.style.strokeDashoffset = circumference
+                progressCircle.style.transition = "stroke-dashoffset 0.1s linear"
+
+                svg.appendChild(circleBg)
+                svg.appendChild(progressCircle)
+
+                var btnText = document.createElement("span")
+                btnText.textContent = "5"
+                btnText.style.cssText = "position:relative;z-index:1;"
+
+                skipBtn.appendChild(svg)
+                skipBtn.appendChild(btnText)
+
+                videoWrapper.appendChild(video)
+                videoWrapper.appendChild(progressBar)
+                videoWrapper.appendChild(skipBtn)
+                overlay.appendChild(videoWrapper)
+                document.body.appendChild(overlay)
+
+                // Skip countdown
+                var startTime = Date.now()
+                var duration = 5000
+                var updateProgress = () => {
+                    var elapsed = Date.now() - startTime
+                    var progress = Math.min(elapsed / duration, 1)
+                    var offset = circumference * (1 - progress)
+                    progressCircle.style.strokeDashoffset = offset
+
+                    var timeLeft = Math.max(0, Math.ceil((duration - elapsed) / 1000))
+
+                    if (timeLeft > 0) {
+                        btnText.textContent = timeLeft
+                        requestAnimationFrame(updateProgress)
+                    } else {
+                        // Кнопка активна - белая
+                        btnText.textContent = "✕"
+                        btnText.style.fontSize = "24px"
+                        skipBtn.disabled = false
+                        skipBtn.style.cursor = "pointer"
+                        skipBtn.style.background = "#fff"
+                        skipBtn.style.color = "#000"
+                        progressCircle.style.stroke = "#000"
+
+                        skipBtn.onmouseover = () => {
+                            skipBtn.style.transform = "scale(1.1)"
+                            skipBtn.style.boxShadow = "0 6px 30px rgba(255,255,255,0.6)"
+                        }
+                        skipBtn.onmouseout = () => {
+                            skipBtn.style.transform = "scale(1)"
+                            skipBtn.style.boxShadow = "0 4px 20px rgba(0,0,0,0.5)"
+                        }
+                    }
+                }
+
+                requestAnimationFrame(updateProgress)
+
+                var cleanup = () => {
+                    this._handleAdComplete()
+                    overlay.style.animation = "fadeOut 0.2s ease"
+                    setTimeout(() => {
                         document.body.removeChild(overlay)
                         resolve({ network: "tower", completed: true })
-                    }
+                    }, 200)
+                }
+
+                video.addEventListener("ended", cleanup)
+                skipBtn.addEventListener("click", () => {
+                    if (!skipBtn.disabled) cleanup()
                 })
 
                 video.addEventListener("click", () => {
@@ -198,29 +308,73 @@
                         window.open(this.loadedAd.click_url, "_blank")
                     }
                 })
+
+                // Add CSS animations
+                if (!document.getElementById("tower-ads-style")) {
+                    var style = document.createElement("style")
+                    style.id = "tower-ads-style"
+                    style.textContent = `
+                        @keyframes fadeIn {
+                            from { opacity: 0; }
+                            to { opacity: 1; }
+                        }
+                        @keyframes fadeOut {
+                            from { opacity: 1; }
+                            to { opacity: 0; }
+                        }
+                    `
+                    document.head.appendChild(style)
+                }
             })
         }
 
         _showInterstitial() {
             return new Promise((resolve) => {
+                // Fullscreen overlay - чистый черный фон
                 var overlay = document.createElement("div")
                 overlay.style.cssText =
-                    "position:fixed;top:0;left:0;width:100%;height:100%;" +
-                    "background:rgba(0,0,0,0.95);z-index:999999;" +
-                    "display:flex;flex-direction:column;align-items:center;justify-content:center;"
+                    "position:fixed;top:0;left:0;width:100%;height:100%;z-index:999999;" +
+                    "background:#000;display:flex;align-items:center;justify-content:center;" +
+                    "animation:fadeIn 0.2s ease;"
+
+                // Image container - на весь экран без скруглений
+                var imgContainer = document.createElement("div")
+                imgContainer.style.cssText =
+                    "position:relative;width:100%;height:100%;"
 
                 var img = document.createElement("img")
                 img.src = this.loadedAd.media_url
-                img.style.cssText = "max-width:90%;max-height:80%;border-radius:8px;cursor:pointer;"
+                img.style.cssText =
+                    "width:100%;height:100%;object-fit:cover;display:block;cursor:pointer;"
 
+                // Close button - круглая кнопка
                 var closeBtn = document.createElement("button")
-                closeBtn.textContent = "Close"
+                closeBtn.textContent = "✕"
                 closeBtn.style.cssText =
-                    "position:absolute;top:20px;right:20px;padding:12px 24px;" +
-                    "background:#10b981;color:white;border:none;border-radius:6px;cursor:pointer;font-size:16px;"
+                    "position:absolute;top:20px;right:20px;z-index:10;" +
+                    "width:60px;height:60px;" +
+                    "background:rgba(0,0,0,0.5);color:#fff;border:none;" +
+                    "border-radius:50%;font:700 24px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;" +
+                    "cursor:pointer;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);" +
+                    "display:flex;align-items:center;justify-content:center;" +
+                    "transition:all 0.3s ease;box-shadow:0 4px 20px rgba(0,0,0,0.5);"
 
-                overlay.appendChild(img)
-                overlay.appendChild(closeBtn)
+                closeBtn.onmouseover = () => {
+                    closeBtn.style.background = "#fff"
+                    closeBtn.style.color = "#000"
+                    closeBtn.style.transform = "scale(1.1)"
+                    closeBtn.style.boxShadow = "0 6px 30px rgba(255,255,255,0.6)"
+                }
+                closeBtn.onmouseout = () => {
+                    closeBtn.style.background = "rgba(0,0,0,0.5)"
+                    closeBtn.style.color = "#fff"
+                    closeBtn.style.transform = "scale(1)"
+                    closeBtn.style.boxShadow = "0 4px 20px rgba(0,0,0,0.5)"
+                }
+
+                imgContainer.appendChild(img)
+                imgContainer.appendChild(closeBtn)
+                overlay.appendChild(imgContainer)
                 document.body.appendChild(overlay)
 
                 img.addEventListener("click", () => {
@@ -230,10 +384,16 @@
                     }
                 })
 
-                closeBtn.addEventListener("click", () => {
-                    document.body.removeChild(overlay)
-                    resolve({ network: "tower", completed: true })
-                })
+                var cleanup = () => {
+                    this._handleAdComplete()
+                    overlay.style.animation = "fadeOut 0.2s ease"
+                    setTimeout(() => {
+                        document.body.removeChild(overlay)
+                        resolve({ network: "tower", completed: true })
+                    }, 200)
+                }
+
+                closeBtn.addEventListener("click", cleanup)
             })
         }
 
@@ -589,7 +749,7 @@
         this.config = config || {}
         this.apiKey = config.apiKey
         this.placementId = config.placementId
-        this.apiBaseUrl = config.apiUrl || window.location.origin + "/api/tower-ads"
+        this.apiBaseUrl = config.apiUrl || "https://towerads-backend.onrender.com/api/tower-ads"
         this.currentAd = null
         this.impressionId = null
         this.isLoading = false
