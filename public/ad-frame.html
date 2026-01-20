@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tower Ads Frame</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #000;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        .loading {
+            text-align: center;
+            color: #fff;
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255,255,255,0.2);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .error {
+            background: #ff4444;
+            color: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            max-width: 400px;
+        }
+        .close-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: rgba(255,255,255,0.9);
+            border: none;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 999999;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <button class="close-btn" id="closeBtn" onclick="closeAd()">✕</button>
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <div>Loading ad...</div>
+    </div>
+    <div class="error" id="error" style="display:none;">
+        <div style="font-size:24px;margin-bottom:10px;">⚠️</div>
+        <div id="errorText">Error loading ad</div>
+        <button onclick="closeAd()" style="margin-top:15px;padding:10px 30px;border:none;border-radius:8px;background:#fff;color:#333;font-weight:600;cursor:pointer;">Close</button>
+    </div>
+
+    <script>
+        // ============== CONFIG ==============
+        const NYGMA_BLOCK_ID = "s1av3y3phfqnuwnihtphpst9";
+        const ADEXIUM_WID = "3d27f8a6-9ace-4037-9f44-8a25c2da7ccc";
+        const TADS_WIDGET_ID = "1016";
+        
+        // Get provider from URL
+        const params = new URLSearchParams(window.location.search);
+        const provider = params.get('provider');
+        const parentOrigin = params.get('origin') || '*';
+        
+        console.log('[AdFrame] Provider:', provider);
+        console.log('[AdFrame] Parent origin:', parentOrigin);
+
+        // ============== COMMUNICATION ==============
+        function sendToParent(type, data = {}) {
+            window.parent.postMessage({ type, provider, ...data }, parentOrigin);
+        }
+
+        function showError(message) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('errorText').textContent = message;
+            sendToParent('adError', { error: message });
+        }
+
+        function closeAd() {
+            sendToParent('adClosed');
+        }
+
+        function adComplete(reward = {}) {
+            sendToParent('adComplete', { reward });
+        }
+
+        function showCloseButton() {
+            document.getElementById('closeBtn').style.display = 'block';
+        }
+
+        // ============== SCRIPT LOADER ==============
+        function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                if (document.querySelector(`script[src="${src}"]`)) {
+                    return resolve();
+                }
+                const s = document.createElement('script');
+                s.src = src;
+                s.async = true;
+                s.onload = resolve;
+                s.onerror = () => reject(new Error('Failed to load: ' + src));
+                document.body.appendChild(s);
+            });
+        }
+
+        // ============== ADSONAR ==============
+        async function showAdSonar() {
+            try {
+                await loadScript('https://static.sonartech.io/lib/1.0.0/sonar.js?appId=app_033fe3d0');
+                
+                // Wait for Sonar
+                let waited = 0;
+                while (!window.Sonar && waited < 5000) {
+                    await new Promise(r => setTimeout(r, 100));
+                    waited += 100;
+                }
+                
+                if (!window.Sonar) throw new Error('AdSonar not loaded');
+                
+                document.getElementById('loading').style.display = 'none';
+                const result = await window.Sonar.show({ adUnit: 'default', loader: true });
+                
+                if (result && (result.status === 'showing' || result.status === 'success' || result.status === 'completed')) {
+                    adComplete({ amount: 100, item: 'coins', provider: 'adsonar' });
+                } else {
+                    showError('AdSonar: ' + (result?.status || 'no ad'));
+                }
+            } catch (e) {
+                showError('AdSonar error: ' + e.message);
+            }
+        }
+
+        // ============== ADEXIUM ==============
+        async function showAdexium() {
+            try {
+                await loadScript('https://cdn.adexium.tech/assets/js/adexium-widget.min.js');
+                
+                let waited = 0;
+                while (!window.AdexiumWidget && waited < 5000) {
+                    await new Promise(r => setTimeout(r, 100));
+                    waited += 100;
+                }
+                
+                if (!window.AdexiumWidget) throw new Error('Adexium not loaded');
+                
+                document.getElementById('loading').style.display = 'none';
+                
+                const adexiumAds = new window.AdexiumWidget({
+                    wid: ADEXIUM_WID,
+                    adFormat: "interstitial",
+                    debug: false
+                });
+
+                let resolved = false;
+
+                adexiumAds.on("adReceived", (ad) => {
+                    adexiumAds.displayAd(ad);
+                });
+
+                adexiumAds.on("adDisplayed", () => {
+                    if (resolved) return;
+                    resolved = true;
+                    adComplete({ amount: 100, item: 'coins', provider: 'adexium' });
+                });
+
+                adexiumAds.on("noAdFound", () => {
+                    if (resolved) return;
+                    resolved = true;
+                    showError('Adexium: no ad found');
+                });
+
+                adexiumAds.on("adError", (error) => {
+                    if (resolved) return;
+                    resolved = true;
+                    showError('Adexium error: ' + error);
+                });
+
+                setTimeout(() => {
+                    if (!resolved) {
+                        resolved = true;
+                        showError('Adexium timeout');
+                    }
+                }, 15000);
+
+                adexiumAds.requestAd("interstitial");
+            } catch (e) {
+                showError('Adexium error: ' + e.message);
+            }
+        }
+
+        // ============== NYGMA ==============
+        async function showNygma() {
+            try {
+                await loadScript('https://static.nigma.smbadmin.tech/sdk/index.min.js');
+                
+                let waited = 0;
+                while (!window.NigmaSDK && waited < 5000) {
+                    await new Promise(r => setTimeout(r, 100));
+                    waited += 100;
+                }
+                
+                if (!window.NigmaSDK) throw new Error('Nygma not loaded');
+                
+                document.getElementById('loading').style.display = 'none';
+                
+                const controller = window.NigmaSDK.init({ blockId: NYGMA_BLOCK_ID });
+                const result = await controller.showAd();
+                
+                adComplete({ amount: 100, item: 'coins', provider: 'nygma' });
+            } catch (e) {
+                showError('Nygma error: ' + e.message);
+            }
+        }
+
+        // ============== TADS ==============
+        async function showTADS() {
+            try {
+                await loadScript('https://unpkg.com/react-tads-widget@latest/dist/index.umd.js');
+                
+                let waited = 0;
+                while (!window.renderTadsWidget && waited < 5000) {
+                    await new Promise(r => setTimeout(r, 100));
+                    waited += 100;
+                }
+                
+                if (!window.renderTadsWidget) throw new Error('TADS not loaded');
+                
+                document.getElementById('loading').style.display = 'none';
+                
+                let resolved = false;
+                
+                window.__tadsCallbacks = {
+                    onShowReward: () => {
+                        if (resolved) return;
+                        resolved = true;
+                        adComplete({ amount: 100, item: 'coins', provider: 'tads' });
+                    },
+                    onAdsNotFound: () => {
+                        if (resolved) return;
+                        resolved = true;
+                        showError('TADS: no ads found');
+                    }
+                };
+                
+                window.renderTadsWidget({
+                    id: TADS_WIDGET_ID,
+                    type: 'fullscreen'
+                });
+                
+                setTimeout(() => {
+                    if (!resolved) {
+                        resolved = true;
+                        showError('TADS timeout');
+                    }
+                }, 15000);
+            } catch (e) {
+                showError('TADS error: ' + e.message);
+            }
+        }
+
+        // ============== INIT ==============
+        async function init() {
+            if (!provider) {
+                showError('No provider specified');
+                return;
+            }
+            
+            sendToParent('adStarted');
+            
+            switch (provider) {
+                case 'adsonar':
+                    await showAdSonar();
+                    break;
+                case 'adexium':
+                    await showAdexium();
+                    break;
+                case 'nygma':
+                case 'nigma':
+                    await showNygma();
+                    break;
+                case 'tads':
+                    await showTADS();
+                    break;
+                default:
+                    showError('Unknown provider: ' + provider);
+            }
+        }
+
+        // Start
+        init();
+    </script>
+</body>
+</html>

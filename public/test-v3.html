@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tower Ads v3.0 - Новый дизайн</title>
+    <title>Tower Ads v3.1 - Mediation + Anti-spam</title>
     <style>
         * {
             margin: 0;
@@ -127,87 +127,161 @@
 <body>
     <div class="container">
         <h1>🎬 Tower Ads</h1>
-        <div class="version">v3.0 - Новый дизайн</div>
+        <div class="version">v3.1 - Mediation + Anti-spam + Loading Screen</div>
 
         <div class="buttons">
-            <button onclick="showVideo()">📺 Показать видео рекламу</button>
-            <button onclick="showBanner()">🖼️ Показать баннер</button>
+            <button onclick="loadAndShowAd()">🚀 Load & Show</button>
+        </div>
+
+        <div style="background:#f0f4ff;padding:15px;border-radius:12px;margin-bottom:20px;">
+            <div style="font-weight:600;margin-bottom:10px;color:#667eea;">🧪 Тест провайдера:</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                <button onclick="setProvider(null)" style="padding:10px 15px;font-size:14px;">AUTO</button>
+                <button onclick="setProvider('tower')" style="padding:10px 15px;font-size:14px;">Tower</button>
+                <button onclick="setProvider('adsonar')" style="padding:10px 15px;font-size:14px;">AdSonar</button>
+                <button onclick="setProvider('adexium')" style="padding:10px 15px;font-size:14px;">Adexium</button>
+                <button onclick="setProvider('nygma')" style="padding:10px 15px;font-size:14px;">Nygma</button>
+                <button onclick="setProvider('tads')" style="padding:10px 15px;font-size:14px;">TADS</button>
+            </div>
+            <div id="current-provider" style="margin-top:10px;font-size:13px;color:#666;">Текущий: AUTO (с бэкенда)</div>
+        </div>
+
+        <div id="status" style="background:#e8f5e9;padding:15px;border-radius:12px;margin-bottom:20px;font-size:14px;display:none;">
+            <div id="status-text">Готов к работе</div>
         </div>
 
         <div class="features">
-            <h3>✨ Новый дизайн</h3>
+            <h3>✨ Новые возможности v3.1</h3>
             <ul class="feature-list">
-                <li>Круглая кнопка 60x60px</li>
-                <li>Круговой прогресс за 5 секунд</li>
-                <li>Fullscreen видео без скруглений</li>
-                <li>Белый прогресс-бар внизу экрана</li>
-                <li>Черный фон на весь экран</li>
-                <li>Символ ✕ после таймера</li>
-                <li>Плавные анимации и hover эффекты</li>
+                <li><strong>Mediation</strong> - tower, adsonar, adexium, nygma, tads</li>
+                <li><strong>Anti-spam</strong> - блокировка повторных запросов</li>
+                <li><strong>Loading Screen</strong> - с лого пока грузится медиа</li>
+                <li>Круговой прогресс 5 секунд</li>
+                <li>Fullscreen без скруглений</li>
+                <li>Автоматический выбор провайдера от бэкенда</li>
             </ul>
         </div>
 
         <div class="demo-info">
-            <strong>💡 Как это работает:</strong>
-            Нажмите кнопку → Круглая кнопка с таймером 5,4,3,2,1 → Белое кольцо заполняется → После 5 сек кнопка становится белой с крестиком ✕
+            <strong>💡 Как работает Mediation:</strong>
+            Backend возвращает provider (tower/adsonar/adexium/nygma/tads) → SDK автоматически показывает рекламу нужного провайдера
         </div>
     </div>
 
     <script src="./tower-ads-v3.js"></script>
     <script>
-        console.log('🎬 Tower Ads v3.0 загружен');
+        console.log('🎬 Tower Ads v3.1 загружен');
+
+        // Status helper
+        function setStatus(text, color) {
+            const el = document.getElementById('status');
+            const textEl = document.getElementById('status-text');
+            el.style.display = 'block';
+            el.style.background = color || '#e8f5e9';
+            textEl.innerHTML = text;
+        }
 
         const ads = new TowerAds({
             apiKey: 'tower_test_123',
             placementId: 'main',
             apiUrl: 'https://towerads-backend.onrender.com/api/tower-ads',
+            logoUrl: './USL.png', // можно указать свой лого
             
-            onAdLoaded: (network) => {
-                console.log('✅ Реклама загружена от:', network);
+            onProviderSelected: (provider) => {
+                console.log('🎯 Провайдер выбран:', provider);
+                setStatus('🎯 Провайдер: <strong>' + provider + '</strong>', '#e3f2fd');
+            },
+            
+            onAdLoaded: (provider) => {
+                console.log('✅ Реклама загружена от:', provider);
+                setStatus('✅ Загружено от: <strong>' + provider + '</strong>', '#e8f5e9');
             },
             
             onAdShown: () => {
-                console.log('📺 Реклама показана');
+                console.log('📺 Реклама показывается');
             },
             
             onAdClosed: () => {
                 console.log('❌ Реклама закрыта');
+                setStatus('❌ Реклама закрыта', '#fff3e0');
             },
             
             onRewardEarned: (reward) => {
-                console.log('🎁 Награда получена:', reward);
-                alert('🎁 Поздравляем! Вы получили: ' + reward.amount + ' ' + reward.item);
+                console.log('🎁 Награда:', reward);
+                setStatus('🎁 Награда от <strong>' + reward.provider + '</strong>: ' + reward.amount + ' ' + reward.item, '#e8f5e9');
+                alert('🎁 Награда от ' + reward.provider + ': ' + reward.amount + ' ' + reward.item);
+            },
+
+            onError: (error) => {
+                console.error('❌ Ошибка:', error);
+                setStatus('❌ Ошибка: ' + error.message, '#ffebee');
             }
         });
 
-        async function showVideo() {
+        // Переключение провайдера для тестирования
+        function setProvider(provider) {
+            ads.setTestProvider(provider);
+            const text = provider ? provider.toUpperCase() : 'AUTO (с бэкенда)';
+            document.getElementById('current-provider').textContent = 'Текущий: ' + text;
+            setStatus('🧪 Провайдер: ' + text, '#e3f2fd');
+        }
+
+        // Метод 1: loadAndShow - загрузить и показать одним вызовом
+        async function loadAndShowAd() {
+            setStatus('🔄 Загрузка...', '#fff3e0');
             try {
-                console.log('🔄 Загрузка видео рекламы...');
-                await ads.loadAd();
-                console.log('✅ Показываем рекламу...');
-                await ads.showAd();
-                console.log('✅ Реклама завершена');
+                const result = await ads.loadAndShow();
+                console.log('✅ Результат:', result);
             } catch (error) {
                 console.error('❌ Ошибка:', error);
-                alert('Ошибка загрузки рекламы: ' + error.message);
             }
         }
 
-        async function showBanner() {
+        // Метод 2: Раздельно load → show
+        async function showVideo() {
+            setStatus('🔄 Загрузка...', '#fff3e0');
             try {
-                console.log('🔄 Загрузка баннера...');
-                await ads.loadAd();
-                console.log('✅ Показываем баннер...');
-                await ads.showAd();
-                console.log('✅ Баннер закрыт');
+                console.log('🔄 Загрузка рекламы...');
+                const loadResult = await ads.loadAd();
+                console.log('📦 Загружено:', loadResult);
+                
+                console.log('✅ Показываем рекламу...');
+                const showResult = await ads.showAd();
+                console.log('✅ Результат:', showResult);
             } catch (error) {
                 console.error('❌ Ошибка:', error);
-                alert('Ошибка загрузки баннера: ' + error.message);
+            }
+        }
+
+        // Тест Anti-spam: 5 быстрых кликов
+        function spamTest() {
+            setStatus('⚡ Anti-spam тест: 5 запросов...', '#fff3e0');
+            let blocked = 0;
+            let success = 0;
+
+            for (let i = 0; i < 5; i++) {
+                ads.loadAd()
+                    .then(() => {
+                        success++;
+                        console.log('✅ Запрос ' + (i+1) + ' прошел');
+                    })
+                    .catch((err) => {
+                        if (err.message.includes('already in progress')) {
+                            blocked++;
+                            console.log('🛡️ Запрос ' + (i+1) + ' заблокирован (anti-spam)');
+                        }
+                    })
+                    .finally(() => {
+                        if (success + blocked === 5) {
+                            setStatus('⚡ Результат: ' + success + ' прошло, ' + blocked + ' заблокировано', '#e8f5e9');
+                        }
+                    });
             }
         }
 
         console.log('📝 Откройте DevTools (F12) для просмотра логов');
         console.log('🎯 Готово к тестированию!');
+        console.log('ℹ️ Методы: ads.isLoading(), ads.isShowing(), ads.getProvider(), ads.reset()');
     </script>
 </body>
 </html>
