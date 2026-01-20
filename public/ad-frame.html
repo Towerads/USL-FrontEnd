@@ -64,7 +64,20 @@
         <button onclick="closeAd()" style="margin-top:15px;padding:10px 30px;border:none;border-radius:8px;background:#fff;color:#333;font-weight:600;cursor:pointer;">Close</button>
     </div>
 
+    <div id="debug" style="position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,0.9);color:#0f0;font-family:monospace;font-size:11px;padding:10px;max-height:200px;overflow-y:auto;z-index:999999;"></div>
+    
     <script>
+        // ============== DEBUG LOGGER ==============
+        const debugEl = document.getElementById('debug');
+        function log(msg, type = 'info') {
+            const time = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#f55' : type === 'success' ? '#5f5' : '#0ff';
+            const line = `<div style="color:${color}">[${time}] ${msg}</div>`;
+            debugEl.innerHTML += line;
+            debugEl.scrollTop = debugEl.scrollHeight;
+            console.log(`[AdFrame ${type}]`, msg);
+        }
+        
         // ============== CONFIG ==============
         const NYGMA_BLOCK_ID = "s1av3y3phfqnuwnihtphpst9";
         const ADEXIUM_WID = "3d27f8a6-9ace-4037-9f44-8a25c2da7ccc";
@@ -75,8 +88,10 @@
         const provider = params.get('provider');
         const parentOrigin = params.get('origin') || '*';
         
-        console.log('[AdFrame] Provider:', provider);
-        console.log('[AdFrame] Parent origin:', parentOrigin);
+        log('🚀 AdFrame initialized');
+        log('Provider: ' + provider);
+        log('Parent origin: ' + parentOrigin);
+        log('Current URL: ' + window.location.href);
 
         // ============== COMMUNICATION ==============
         function sendToParent(type, data = {}) {
@@ -120,7 +135,9 @@
         // ============== ADSONAR ==============
         async function showAdSonar() {
             try {
+                log('📥 Loading AdSonar script...');
                 await loadScript('https://static.sonartech.io/lib/1.0.0/sonar.js?appId=app_033fe3d0');
+                log('✅ AdSonar script loaded', 'success');
                 
                 // Wait for Sonar
                 let waited = 0;
@@ -129,17 +146,26 @@
                     waited += 100;
                 }
                 
-                if (!window.Sonar) throw new Error('AdSonar not loaded');
+                if (!window.Sonar) {
+                    log('❌ window.Sonar not available after 5s', 'error');
+                    throw new Error('AdSonar not loaded');
+                }
                 
+                log('🎯 window.Sonar available, calling show()...');
                 document.getElementById('loading').style.display = 'none';
                 const result = await window.Sonar.show({ adUnit: 'default', loader: true });
                 
+                log('📋 AdSonar result: ' + JSON.stringify(result));
+                
                 if (result && (result.status === 'showing' || result.status === 'success' || result.status === 'completed')) {
+                    log('✅ AdSonar completed successfully', 'success');
                     adComplete({ amount: 100, item: 'coins', provider: 'adsonar' });
                 } else {
+                    log('⚠️ AdSonar status: ' + (result?.status || 'no ad'), 'error');
                     showError('AdSonar: ' + (result?.status || 'no ad'));
                 }
             } catch (e) {
+                log('❌ AdSonar error: ' + e.message, 'error');
                 showError('AdSonar error: ' + e.message);
             }
         }
@@ -147,7 +173,9 @@
         // ============== ADEXIUM ==============
         async function showAdexium() {
             try {
+                log('📥 Loading Adexium script...');
                 await loadScript('https://cdn.adexium.tech/assets/js/adexium-widget.min.js');
+                log('✅ Adexium script loaded', 'success');
                 
                 let waited = 0;
                 while (!window.AdexiumWidget && waited < 5000) {
@@ -155,35 +183,43 @@
                     waited += 100;
                 }
                 
-                if (!window.AdexiumWidget) throw new Error('Adexium not loaded');
+                if (!window.AdexiumWidget) {
+                    log('❌ window.AdexiumWidget not available', 'error');
+                    throw new Error('Adexium not loaded');
+                }
                 
+                log('🎯 Creating AdexiumWidget with WID: ' + ADEXIUM_WID);
                 document.getElementById('loading').style.display = 'none';
                 
                 const adexiumAds = new window.AdexiumWidget({
                     wid: ADEXIUM_WID,
                     adFormat: "interstitial",
-                    debug: false
+                    debug: true
                 });
 
                 let resolved = false;
 
                 adexiumAds.on("adReceived", (ad) => {
+                    log('📦 Adexium adReceived: ' + JSON.stringify(ad));
                     adexiumAds.displayAd(ad);
                 });
 
                 adexiumAds.on("adDisplayed", () => {
+                    log('✅ Adexium adDisplayed', 'success');
                     if (resolved) return;
                     resolved = true;
                     adComplete({ amount: 100, item: 'coins', provider: 'adexium' });
                 });
 
                 adexiumAds.on("noAdFound", () => {
+                    log('⚠️ Adexium noAdFound', 'error');
                     if (resolved) return;
                     resolved = true;
                     showError('Adexium: no ad found');
                 });
 
                 adexiumAds.on("adError", (error) => {
+                    log('❌ Adexium adError: ' + error, 'error');
                     if (resolved) return;
                     resolved = true;
                     showError('Adexium error: ' + error);
@@ -191,13 +227,16 @@
 
                 setTimeout(() => {
                     if (!resolved) {
+                        log('⏰ Adexium timeout after 15s', 'error');
                         resolved = true;
                         showError('Adexium timeout');
                     }
                 }, 15000);
 
+                log('🚀 Calling adexiumAds.requestAd("interstitial")...');
                 adexiumAds.requestAd("interstitial");
             } catch (e) {
+                log('❌ Adexium error: ' + e.message, 'error');
                 showError('Adexium error: ' + e.message);
             }
         }
@@ -205,7 +244,9 @@
         // ============== NYGMA ==============
         async function showNygma() {
             try {
+                log('📥 Loading Nygma script...');
                 await loadScript('https://static.nigma.smbadmin.tech/sdk/index.min.js');
+                log('✅ Nygma script loaded', 'success');
                 
                 let waited = 0;
                 while (!window.NigmaSDK && waited < 5000) {
@@ -213,15 +254,24 @@
                     waited += 100;
                 }
                 
-                if (!window.NigmaSDK) throw new Error('Nygma not loaded');
+                if (!window.NigmaSDK) {
+                    log('❌ window.NigmaSDK not available', 'error');
+                    throw new Error('Nygma not loaded');
+                }
                 
+                log('🎯 Initializing NigmaSDK with blockId: ' + NYGMA_BLOCK_ID);
                 document.getElementById('loading').style.display = 'none';
                 
                 const controller = window.NigmaSDK.init({ blockId: NYGMA_BLOCK_ID });
+                log('📋 NigmaSDK controller created: ' + JSON.stringify(Object.keys(controller)));
+                
+                log('🚀 Calling controller.showAd()...');
                 const result = await controller.showAd();
                 
+                log('✅ Nygma result: ' + JSON.stringify(result), 'success');
                 adComplete({ amount: 100, item: 'coins', provider: 'nygma' });
             } catch (e) {
+                log('❌ Nygma error: ' + e.message, 'error');
                 showError('Nygma error: ' + e.message);
             }
         }
@@ -229,7 +279,9 @@
         // ============== TADS ==============
         async function showTADS() {
             try {
+                log('📥 Loading TADS script...');
                 await loadScript('https://unpkg.com/react-tads-widget@latest/dist/index.umd.js');
+                log('✅ TADS script loaded', 'success');
                 
                 let waited = 0;
                 while (!window.renderTadsWidget && waited < 5000) {
@@ -237,25 +289,32 @@
                     waited += 100;
                 }
                 
-                if (!window.renderTadsWidget) throw new Error('TADS not loaded');
+                if (!window.renderTadsWidget) {
+                    log('❌ window.renderTadsWidget not available', 'error');
+                    throw new Error('TADS not loaded');
+                }
                 
+                log('🎯 TADS ready, widget ID: ' + TADS_WIDGET_ID);
                 document.getElementById('loading').style.display = 'none';
                 
                 let resolved = false;
                 
                 window.__tadsCallbacks = {
                     onShowReward: () => {
+                        log('✅ TADS onShowReward called', 'success');
                         if (resolved) return;
                         resolved = true;
                         adComplete({ amount: 100, item: 'coins', provider: 'tads' });
                     },
                     onAdsNotFound: () => {
+                        log('⚠️ TADS onAdsNotFound called', 'error');
                         if (resolved) return;
                         resolved = true;
                         showError('TADS: no ads found');
                     }
                 };
                 
+                log('🚀 Calling renderTadsWidget...');
                 window.renderTadsWidget({
                     id: TADS_WIDGET_ID,
                     type: 'fullscreen'
@@ -263,44 +322,59 @@
                 
                 setTimeout(() => {
                     if (!resolved) {
+                        log('⏰ TADS timeout after 15s', 'error');
                         resolved = true;
                         showError('TADS timeout');
                     }
                 }, 15000);
             } catch (e) {
+                log('❌ TADS error: ' + e.message, 'error');
                 showError('TADS error: ' + e.message);
             }
         }
 
         // ============== INIT ==============
         async function init() {
+            log('🏁 init() called');
+            
             if (!provider) {
+                log('❌ No provider in URL params', 'error');
                 showError('No provider specified');
                 return;
             }
             
+            log('📤 Sending adStarted to parent...');
             sendToParent('adStarted');
             
-            switch (provider) {
-                case 'adsonar':
-                    await showAdSonar();
-                    break;
-                case 'adexium':
-                    await showAdexium();
-                    break;
-                case 'nygma':
-                case 'nigma':
-                    await showNygma();
-                    break;
-                case 'tads':
-                    await showTADS();
-                    break;
-                default:
-                    showError('Unknown provider: ' + provider);
+            log('🎬 Starting provider: ' + provider);
+            
+            try {
+                switch (provider) {
+                    case 'adsonar':
+                        await showAdSonar();
+                        break;
+                    case 'adexium':
+                        await showAdexium();
+                        break;
+                    case 'nygma':
+                    case 'nigma':
+                        await showNygma();
+                        break;
+                    case 'tads':
+                        await showTADS();
+                        break;
+                    default:
+                        log('❌ Unknown provider: ' + provider, 'error');
+                        showError('Unknown provider: ' + provider);
+                }
+            } catch (e) {
+                log('❌ Unhandled error in init: ' + e.message, 'error');
+                showError('Error: ' + e.message);
             }
         }
 
         // Start
+        log('⚡ Starting init...');
         init();
     </script>
 </body>

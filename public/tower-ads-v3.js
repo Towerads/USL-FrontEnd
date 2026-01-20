@@ -43,8 +43,8 @@
         // Варианты: 'tower', 'adsonar', 'adexium', 'nygma', 'tads', null (авто с бэка)
         this.testProvider = config.testProvider || null;
         
-        // URL для iframe с партнёрскими SDK (должен быть на tower.ru в проде)
-        this.adFrameUrl = config.adFrameUrl || './ad-frame.html';
+        // URL для iframe с партнёрскими SDK
+        this.adFrameUrl = config.adFrameUrl || 'https://tower-ton.com/ad-frame.html';
         
         // Callbacks
         this.onAdLoaded = config.onAdLoaded || function() {};
