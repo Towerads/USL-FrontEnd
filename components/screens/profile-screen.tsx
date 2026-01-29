@@ -1,206 +1,198 @@
 "use client"
 
-import { Card, Button, Avatar, Switch, Space, Typography, Radio } from 'antd';
-import { SettingOutlined, UserOutlined, RightOutlined, StarOutlined, FileTextOutlined, SafetyOutlined, QuestionCircleOutlined, BulbOutlined, RocketOutlined, TeamOutlined, BellOutlined, WalletOutlined } from '@ant-design/icons';
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
+import {
+  Card,
+  Button,
+  Avatar,
+  Space,
+  Typography,
+  Radio,
+  Divider,
+  Spin,
+  message,
+} from "antd"
+import {
+  UserOutlined,
+  ArrowUpOutlined,
+  ArrowDownOutlined,
+  CustomerServiceOutlined,
+  GiftOutlined,
+  SettingOutlined,
+  RightOutlined,
+  RocketOutlined,
+  TeamOutlined,
+} from "@ant-design/icons"
+import { useEffect, useState } from "react"
 
-const { Title, Text } = Typography;
+const { Title, Text } = Typography
+
+const API_URL = "https://towerads-backend.onrender.com"
+
+type Advertiser = {
+  id: string
+  telegram_user_id: string
+  email: string | null
+  status: string
+  created_at: string
+}
 
 export function ProfileScreen() {
-  const [isDark, setIsDark] = useState(false)
-  const [userType, setUserType] = useState<'advertiser' | 'publisher'>('advertiser')
-  const router = useRouter()
+  const [loading, setLoading] = useState(true)
+  const [advertiser, setAdvertiser] = useState<Advertiser | null>(null)
+  const [tgUser, setTgUser] = useState<any>(null)
+  const [userType, setUserType] = useState<"advertiser" | "publisher">(
+    "advertiser"
+  )
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem("theme")
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
-    const shouldBeDark = savedTheme === "dark" || (!savedTheme && prefersDark)
-    setIsDark(shouldBeDark)
-    document.documentElement.classList.toggle("dark", shouldBeDark)
-
-    // Загружаем тип пользователя
-    const savedUserType = localStorage.getItem('userType') as 'advertiser' | 'publisher'
-    if (savedUserType) {
-      setUserType(savedUserType)
+    // 1️⃣ Проверяем Telegram WebApp
+    const tg = (window as any).Telegram?.WebApp
+    if (!tg) {
+      console.warn("Telegram WebApp not found (browser mode)")
+      setLoading(false)
+      return
     }
+
+    tg.ready()
+    tg.expand()
+
+    const user = tg.initDataUnsafe?.user
+    if (!user?.id) {
+      message.error("Не удалось получить Telegram user")
+      setLoading(false)
+      return
+    }
+
+    setTgUser(user)
+
+    // 2️⃣ Запрос в бекенд
+    fetch(`${API_URL}/advertiser/me`, {
+      headers: {
+        "X-TG-USER-ID": String(user.id),
+      },
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          const text = await res.text()
+          throw new Error(text)
+        }
+        return res.json()
+      })
+      .then((data) => {
+        console.log("✅ BACKEND RESPONSE:", data)
+        setAdvertiser(data.advertiser)
+        setUserType("advertiser")
+      })
+      .catch((err) => {
+        console.error("❌ BACKEND ERROR:", err)
+        message.error("Ошибка загрузки профиля")
+      })
+      .finally(() => setLoading(false))
   }, [])
 
-  const toggleTheme = () => {
-    const newTheme = !isDark
-    setIsDark(newTheme)
-    document.documentElement.classList.toggle("dark", newTheme)
-    localStorage.setItem("theme", newTheme ? "dark" : "light")
+  if (loading) {
+    return <Spin fullscreen />
   }
 
-  const handleUserTypeChange = (newType: 'advertiser' | 'publisher') => {
-    setUserType(newType)
-    localStorage.setItem('userType', newType)
-    // Перенаправляем на соответствующий дашборд
-    if (newType === 'advertiser') {
-      router.push('/advertiser')
-    } else {
-      router.push('/publisher')
-    }
+  if (!tgUser || !advertiser) {
+    return (
+      <div style={{ padding: 20 }}>
+        <Title level={4}>Профиль недоступен</Title>
+        <Text type="secondary">
+          Откройте приложение через Telegram Mini App
+        </Text>
+      </div>
+    )
   }
-
-  const menuItems = [
-    { icon: StarOutlined, label: "Мои креативы", href: "/creatives" },
-    { icon: FileTextOutlined, label: "История операций", href: "/history" },
-    { icon: SafetyOutlined, label: "Безопасность", href: "/security" },
-    { icon: QuestionCircleOutlined, label: "Поддержка", href: "/support" },
-  ]
 
   return (
-    <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
-      <Space direction="vertical" size={20} style={{ width: '100%' }}>
-        {/* Header */}
-        <Title level={2} style={{ margin: 0, fontWeight: 700, fontSize: '28px', marginBottom: '8px' }}>Профиль</Title>
+    <div style={{ padding: "20px", maxWidth: "600px", margin: "0 auto" }}>
+      <Space direction="vertical" size={20} style={{ width: "100%" }}>
+        {/* HEADER */}
+        <div style={{ textAlign: "center" }}>
+          <Avatar size={80} icon={<UserOutlined />} />
+          <Title level={3} style={{ marginTop: 12 }}>
+            {tgUser.first_name} {tgUser.last_name}
+          </Title>
+          <Text type="secondary">@{tgUser.username}</Text>
+        </div>
 
-        {/* User Card */}
+        {/* ACCOUNT TYPE */}
         <Card>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <Avatar size={64} style={{ backgroundColor: '#1677ff', fontSize: '22px', fontWeight: 700, color: '#fff' }}>
-              АИ
-            </Avatar>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <Title level={4} style={{ margin: 0, fontWeight: 700, fontSize: '18px' }}>Александр Иванов</Title>
-              <Text type="secondary" style={{ fontSize: '15px' }}>@alexander_ads</Text>
-            </div>
-            <Button type="default" icon={<SettingOutlined />} shape="circle" size="large" />
-          </div>
-        </Card>
-
-        {/* User Type Switcher */}
-        <Card>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
-            <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(82, 196, 26, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <TeamOutlined style={{ fontSize: '20px', color: '#52c41a' }} />
-            </div>
-            <div style={{ flex: 1 }}>
-              <Text strong style={{ fontWeight: 600, fontSize: '15px', display: 'block', marginBottom: '8px' }}>Тип аккаунта</Text>
-              <Radio.Group 
-                value={userType} 
-                onChange={(e) => handleUserTypeChange(e.target.value)}
-                style={{ width: '100%' }}
-              >
-                <Space direction="vertical" style={{ width: '100%' }} size={8}>
-                  <Radio value="advertiser" style={{ width: '100%', padding: '8px', borderRadius: '8px', background: userType === 'advertiser' ? 'rgba(22, 119, 255, 0.05)' : 'transparent' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <RocketOutlined style={{ color: '#1677ff' }} />
-                      <span style={{ fontWeight: 500 }}>Рекламодатель</span>
-                    </div>
-                  </Radio>
-                  <Radio value="publisher" style={{ width: '100%', padding: '8px', borderRadius: '8px', background: userType === 'publisher' ? 'rgba(22, 119, 255, 0.05)' : 'transparent' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <UserOutlined style={{ color: '#52c41a' }} />
-                      <span style={{ fontWeight: 500 }}>Паблишер</span>
-                    </div>
-                  </Radio>
-                </Space>
-              </Radio.Group>
-            </div>
-          </div>
-        </Card>
-
-        {/* Theme Toggle */}
-        <Card>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-              <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(22, 119, 255, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <BulbOutlined style={{ fontSize: '20px', color: '#1677ff' }} />
-              </div>
-              <div>
-                <Text strong style={{ fontWeight: 600, fontSize: '15px' }}>Темная тема</Text>
-                <br />
-                <Text type="secondary" style={{ fontSize: '14px' }}>Переключение темы оформления</Text>
-              </div>
-            </div>
-            <Switch checked={isDark} onChange={toggleTheme} />
-          </div>
-        </Card>
-
-        {/* Referral Card */}
-        <Card hoverable style={{ background: 'linear-gradient(135deg, rgba(22, 119, 255, 0.1) 0%, rgba(64, 150, 255, 0.05) 100%)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-            <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: '#1677ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <UserOutlined style={{ fontSize: '20px', color: '#fff' }} />
-            </div>
-            <div style={{ flex: 1 }}>
-              <Text strong style={{ fontWeight: 600, fontSize: '15px' }}>Реферальная программа</Text>
-              <br />
-              <Text type="secondary" style={{ fontSize: '14px' }}>Приглашено: 12 пользователей</Text>
-            </div>
-            <RightOutlined style={{ fontSize: '18px', color: 'var(--color-text-secondary)' }} />
-          </div>
-        </Card>
-
-        {/* Menu Items */}
-        <Space direction="vertical" size={10} style={{ width: '100%' }}>
-          {menuItems.map((item, index) => {
-            const Icon = item.icon
-            return (
-              <Link key={index} href={item.href} style={{ textDecoration: 'none' }}>
-                <Card hoverable style={{ cursor: 'pointer' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                    <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: '#F7F7F7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Icon style={{ fontSize: '20px' }} />
-                    </div>
-                    <Text strong style={{ flex: 1, fontWeight: 600, fontSize: '15px' }}>{item.label}</Text>
-                    <RightOutlined style={{ fontSize: '18px', color: 'var(--color-text-secondary)' }} />
-                  </div>
-                </Card>
-              </Link>
-            )
-          })}
-          <Card>
-            <Space direction="vertical" size={0} style={{ width: '100%' }}>
-              <Button
-                type="text"
-                block
-                href="/telegram-integration"
-                style={{
-                  height: '56px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '0 16px',
-                  textAlign: 'left',
-                }}
-              >
-                <Space>
-                  <BellOutlined style={{ fontSize: '20px' }} />
-                  <Text strong style={{ fontSize: '15px' }}>Telegram уведомления</Text>
-                </Space>
-                <RightOutlined style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }} />
-              </Button>
-              <Button
-                type="text"
-                block
-                style={{
-                  height: '56px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '0 16px',
-                  textAlign: 'left',
-                }}
-              >
-                <Space>
-                  <WalletOutlined style={{ fontSize: '20px' }} />
-                  <Text strong style={{ fontSize: '15px' }}>Кошелёк</Text>
-                </Space>
-                <RightOutlined style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }} />
-              </Button>
+          <Text strong>Тип аккаунта</Text>
+          <Radio.Group value={userType} style={{ marginTop: 12 }}>
+            <Space direction="vertical">
+              <Radio value="advertiser">
+                <RocketOutlined /> Рекламодатель
+              </Radio>
+              <Radio value="publisher" disabled>
+                <TeamOutlined /> Паблишер (скоро)
+              </Radio>
             </Space>
-          </Card>
+          </Radio.Group>
+        </Card>
+
+        {/* BALANCE */}
+        <div>
+          <Text strong>Баланс</Text>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 12,
+              marginTop: 12,
+            }}
+          >
+            <Card>
+              <Text type="secondary">Доступно</Text>
+              <div style={{ fontSize: 24, fontWeight: 700 }}>0.00</div>
+              <Text type="secondary">USDT</Text>
+            </Card>
+            <Card>
+              <Text type="secondary">Заморожено</Text>
+              <div style={{ fontSize: 24, fontWeight: 700 }}>0.00</div>
+              <Text type="secondary">USDT</Text>
+            </Card>
+          </div>
+        </div>
+
+        {/* ACTIONS */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 12,
+          }}
+        >
+          <Button type="primary" icon={<ArrowUpOutlined />}>
+            Пополнить
+          </Button>
+          <Button icon={<ArrowDownOutlined />}>Вывести</Button>
+        </div>
+
+        <Divider />
+
+        {/* MENU */}
+        <Space direction="vertical" style={{ width: "100%" }}>
+          <Button type="text" block href="/support-chat">
+            <CustomerServiceOutlined /> Поддержка
+            <RightOutlined />
+          </Button>
+
+          <Button type="text" block>
+            <GiftOutlined /> Реферальная программа
+            <RightOutlined />
+          </Button>
+
+          <Button type="text" block href="/settings">
+            <SettingOutlined /> Настройки
+            <RightOutlined />
+          </Button>
         </Space>
 
-        {/* App Info */}
-        <div style={{ textAlign: 'center', paddingTop: '20px', paddingBottom: '8px' }}>
-          <Text type="secondary" style={{ fontSize: '13px', display: 'block' }}>USL версия 1.0.0</Text>
-          <Text type="secondary" style={{ fontSize: '13px', display: 'block', marginTop: '4px' }}>© 2025 UP Stream Lab</Text>
+        {/* INFO */}
+        <div style={{ textAlign: "center", marginTop: 20 }}>
+          <Text type="secondary">USL v1.0.0</Text>
         </div>
       </Space>
     </div>
