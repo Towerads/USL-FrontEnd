@@ -1,45 +1,25 @@
-import type React from "react"
-import type { Metadata } from "next"
-import { Analytics } from "@vercel/analytics/next"
-import { AntdProvider } from "@/components/antd-provider"
-import "./globals.css"
+"use client"
 
-export const metadata: Metadata = {
-  title: "USL — Платформа для рекламы",
-  description: "Telegram Mini App для рекламодателей и паблишеров",
-  generator: "",
-  icons: {
-    icon: [
-      {
-        url: "/icon-light-32x32.png",
-        media: "(prefers-color-scheme: light)",
-      },
-      {
-        url: "/icon-dark-32x32.png",
-        media: "(prefers-color-scheme: dark)",
-      },
-      {
-        url: "/icon.svg",
-        type: "image/svg+xml",
-      },
-    ],
-    apple: "/apple-icon.png",
-  },
-}
+import { useEffect } from "react"
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode
-}>) {
+export default function RootLayout({ children }) {
+  useEffect(() => {
+    const tg = window.Telegram?.WebApp
+    if (!tg) return
+
+    tg.ready()
+    tg.expand()
+
+    // сохраним пользователя глобально
+    window.__TG_USER__ = tg.initDataUnsafe?.user
+    console.log("TG USER:", window.__TG_USER__)
+  }, [])
+
   return (
     <html lang="ru">
-      <body className="font-sans antialiased">
-        <AntdProvider>
-          {children}
-        </AntdProvider>
-        <Analytics />
-      </body>
+      <body>{children}</body>
     </html>
   )
 }
+
+

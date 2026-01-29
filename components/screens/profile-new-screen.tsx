@@ -1,156 +1,143 @@
 "use client"
 
-import { Card, Button, Avatar, Space, Typography, Radio, Divider } from 'antd';
-import { UserOutlined, ArrowUpOutlined, ArrowDownOutlined, CustomerServiceOutlined, GiftOutlined, SettingOutlined, RightOutlined, RocketOutlined, TeamOutlined } from '@ant-design/icons';
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import {
+  Card,
+  Button,
+  Avatar,
+  Space,
+  Typography,
+  Radio,
+  Divider,
+  Spin,
+} from "antd"
+import {
+  UserOutlined,
+  ArrowUpOutlined,
+  ArrowDownOutlined,
+  CustomerServiceOutlined,
+  GiftOutlined,
+  SettingOutlined,
+  RightOutlined,
+  RocketOutlined,
+  TeamOutlined,
+} from "@ant-design/icons"
+import { useEffect, useState } from "react"
 
-const { Title, Text } = Typography;
+const { Title, Text } = Typography
+
+type Advertiser = {
+  id: string
+  telegram_user_id: string
+  email: string
+  status: string
+  created_at: string
+}
 
 export function ProfileNewScreen() {
-  const [userType, setUserType] = useState<'advertiser' | 'publisher' | null>(null)
-  const router = useRouter()
+  const [userType, setUserType] = useState<"advertiser" | "publisher">(
+    "advertiser"
+  )
+  const [advertiser, setAdvertiser] = useState<Advertiser | null>(null)
+  const [tgUser, setTgUser] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
 
+  // 🔹 Получаем Telegram user
   useEffect(() => {
-    const savedUserType = localStorage.getItem('userType') as 'advertiser' | 'publisher' | null
-    setUserType(savedUserType)
+    const tg = window.Telegram?.WebApp
+    if (!tg) return
+
+    const user = tg.initDataUnsafe?.user
+    if (!user?.id) return
+
+    setTgUser(user)
+
+    fetch("https://YOUR_BACKEND_URL/advertiser/me", {
+      headers: {
+        "X-TG-USER-ID": String(user.id),
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setAdvertiser(data.advertiser)
+        setUserType("advertiser") // пока только advertiser
+      })
+      .finally(() => setLoading(false))
   }, [])
 
-  const handleUserTypeChange = (value: 'advertiser' | 'publisher') => {
+  const handleUserTypeChange = (value: "advertiser" | "publisher") => {
+    // ❗ пока publisher не поддержан бекендом
     setUserType(value)
-    localStorage.setItem('userType', value)
-    // Reload to update bottom nav
-    window.location.reload()
   }
 
-  // If no user type selected, show selection screen
-  if (!userType) {
-    return (
-      <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto', paddingTop: '60px' }}>
-        <Space direction="vertical" size={24} style={{ width: '100%', textAlign: 'center' }}>
-          <div>
-            <Title level={2} style={{ margin: 0, fontWeight: 700, fontSize: '28px', marginBottom: '8px' }}>
-              Добро пожаловать!
-            </Title>
-            <Text type="secondary" style={{ fontSize: '15px' }}>
-              Выберите тип аккаунта для продолжения
-            </Text>
-          </div>
-
-          <Card>
-            <Space direction="vertical" size={16} style={{ width: '100%' }}>
-              <Button
-                size="large"
-                block
-                onClick={() => handleUserTypeChange('advertiser')}
-                style={{
-                  height: '80px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'flex-start',
-                  padding: '0 20px',
-                  textAlign: 'left',
-                }}
-              >
-                <Space size={16}>
-                  <div style={{ 
-                    width: '48px', 
-                    height: '48px', 
-                    borderRadius: '12px', 
-                    background: 'rgba(22, 119, 255, 0.1)', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center' 
-                  }}>
-                    <RocketOutlined style={{ fontSize: '24px', color: '#1677ff' }} />
-                  </div>
-                  <div style={{ textAlign: 'left' }}>
-                    <Text strong style={{ fontSize: '16px', display: 'block' }}>Рекламодатель</Text>
-                    <Text type="secondary" style={{ fontSize: '13px' }}>Размещайте рекламу в каналах</Text>
-                  </div>
-                </Space>
-              </Button>
-
-              <Button
-                size="large"
-                block
-                onClick={() => handleUserTypeChange('publisher')}
-                style={{
-                  height: '80px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'flex-start',
-                  padding: '0 20px',
-                  textAlign: 'left',
-                }}
-              >
-                <Space size={16}>
-                  <div style={{ 
-                    width: '48px', 
-                    height: '48px', 
-                    borderRadius: '12px', 
-                    background: 'rgba(82, 196, 26, 0.1)', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center' 
-                  }}>
-                    <TeamOutlined style={{ fontSize: '24px', color: '#52c41a' }} />
-                  </div>
-                  <div style={{ textAlign: 'left' }}>
-                    <Text strong style={{ fontSize: '16px', display: 'block' }}>Паблишер</Text>
-                    <Text type="secondary" style={{ fontSize: '13px' }}>Монетизируйте свои каналы</Text>
-                  </div>
-                </Space>
-              </Button>
-            </Space>
-          </Card>
-        </Space>
-      </div>
-    )
+  if (loading) {
+    return <Spin fullscreen />
   }
 
-  // Main profile screen
+  if (!advertiser || !tgUser) {
+    return <div>Ошибка загрузки профиля</div>
+  }
+
+  // --------------------
+  // MAIN PROFILE SCREEN
+  // --------------------
   return (
-    <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto', paddingBottom: '100px' }}>
-      <Space direction="vertical" size={20} style={{ width: '100%' }}>
+    <div
+      style={{
+        padding: "20px",
+        maxWidth: "600px",
+        margin: "0 auto",
+        paddingBottom: "100px",
+      }}
+    >
+      <Space direction="vertical" size={20} style={{ width: "100%" }}>
         {/* Header */}
-        <div style={{ textAlign: 'center', paddingTop: '20px' }}>
-          <Avatar size={80} icon={<UserOutlined />} style={{ marginBottom: '12px' }} />
-          <Title level={3} style={{ margin: 0, fontWeight: 700, fontSize: '22px' }}>Иван Иванов</Title>
-          <Text type="secondary" style={{ fontSize: '14px' }}>@ivan_ivanov</Text>
+        <div style={{ textAlign: "center", paddingTop: "20px" }}>
+          <Avatar
+            size={80}
+            icon={<UserOutlined />}
+            style={{ marginBottom: "12px" }}
+          />
+          <Title level={3} style={{ margin: 0, fontWeight: 700 }}>
+            {tgUser.first_name}
+          </Title>
+          <Text type="secondary">@{tgUser.username}</Text>
         </div>
 
-        {/* Account Type Switcher */}
+        {/* Account Type */}
         <Card>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div style={{ 
-              width: '44px', 
-              height: '44px', 
-              borderRadius: '12px', 
-              background: 'rgba(22, 119, 255, 0.1)', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center' 
-            }}>
-              {userType === 'advertiser' ? (
-                <RocketOutlined style={{ fontSize: '20px', color: '#1677ff' }} />
+          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+            <div
+              style={{
+                width: "44px",
+                height: "44px",
+                borderRadius: "12px",
+                background: "rgba(22, 119, 255, 0.1)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {userType === "advertiser" ? (
+                <RocketOutlined style={{ fontSize: "20px", color: "#1677ff" }} />
               ) : (
-                <TeamOutlined style={{ fontSize: '20px', color: '#52c41a' }} />
+                <TeamOutlined style={{ fontSize: "20px", color: "#52c41a" }} />
               )}
             </div>
+
             <div style={{ flex: 1 }}>
-              <Text strong style={{ fontWeight: 600, fontSize: '15px', display: 'block', marginBottom: '8px' }}>Тип аккаунта</Text>
-              <Radio.Group 
-                value={userType} 
+              <Text strong style={{ display: "block", marginBottom: "8px" }}>
+                Тип аккаунта
+              </Text>
+
+              <Radio.Group
+                value={userType}
                 onChange={(e) => handleUserTypeChange(e.target.value)}
-                style={{ width: '100%' }}
+                style={{ width: "100%" }}
               >
-                <Space direction="vertical" style={{ width: '100%' }} size={8}>
-                  <Radio value="advertiser" style={{ width: '100%', padding: '8px', borderRadius: '8px', background: userType === 'advertiser' ? 'rgba(22, 119, 255, 0.05)' : 'transparent' }}>
-                    <span style={{ fontWeight: 500 }}>Рекламодатель</span>
-                  </Radio>
-                  <Radio value="publisher" style={{ width: '100%', padding: '8px', borderRadius: '8px', background: userType === 'publisher' ? 'rgba(22, 119, 255, 0.05)' : 'transparent' }}>
-                    <span style={{ fontWeight: 500 }}>Паблишер</span>
+                <Space direction="vertical" style={{ width: "100%" }} size={8}>
+                  <Radio value="advertiser">Рекламодатель</Radio>
+                  <Radio value="publisher" disabled>
+                    Паблишер (скоро)
                   </Radio>
                 </Space>
               </Radio.Group>
@@ -158,112 +145,86 @@ export function ProfileNewScreen() {
           </div>
         </Card>
 
-        {/* Balance Cards */}
+        {/* Balance (пока без логики) */}
         <div>
-          <Text strong style={{ fontSize: '16px', display: 'block', marginBottom: '12px' }}>Баланс</Text>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <Text strong style={{ display: "block", marginBottom: "12px" }}>
+            Баланс
+          </Text>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "12px",
+            }}
+          >
             <Card>
-              <Text type="secondary" style={{ fontSize: '13px', display: 'block', marginBottom: '8px' }}>Доступно</Text>
-              <div style={{ fontSize: '24px', fontWeight: 700, color: '#1677ff' }}>1,234.56</div>
-              <Text type="secondary" style={{ fontSize: '14px' }}>USDT</Text>
+              <Text type="secondary">Доступно</Text>
+              <div style={{ fontSize: "24px", fontWeight: 700 }}>0.00</div>
+              <Text type="secondary">USDT</Text>
             </Card>
             <Card>
-              <Text type="secondary" style={{ fontSize: '13px', display: 'block', marginBottom: '8px' }}>Заморожено</Text>
-              <div style={{ fontSize: '24px', fontWeight: 700, color: '#faad14' }}>156.80</div>
-              <Text type="secondary" style={{ fontSize: '14px' }}>USDT</Text>
+              <Text type="secondary">Заморожено</Text>
+              <div style={{ fontSize: "24px", fontWeight: 700 }}>0.00</div>
+              <Text type="secondary">USDT</Text>
             </Card>
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-          <Button 
-            type="primary" 
-            icon={<ArrowUpOutlined />} 
-            size="large" 
+        {/* Actions */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "12px",
+          }}
+        >
+          <Button
+            type="primary"
+            icon={<ArrowUpOutlined />}
+            size="large"
             block
-            style={{ fontWeight: 600, height: '48px' }}
           >
             Пополнить
           </Button>
-          <Button 
-            icon={<ArrowDownOutlined />} 
-            size="large" 
-            block
-            style={{ fontWeight: 600, height: '48px' }}
-          >
+          <Button icon={<ArrowDownOutlined />} size="large" block>
             Вывести
           </Button>
         </div>
 
-        <Divider style={{ margin: '8px 0' }} />
+        <Divider />
 
-        {/* Menu Items */}
-        <Space direction="vertical" size={12} style={{ width: '100%' }}>
-          <Button
-            type="text"
-            block
-            href="/support-chat"
-            style={{
-              height: '56px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '0 16px',
-              textAlign: 'left',
-            }}
-          >
+        {/* Menu */}
+        <Space direction="vertical" size={12} style={{ width: "100%" }}>
+          <Button type="text" block href="/support-chat">
             <Space>
-              <CustomerServiceOutlined style={{ fontSize: '20px' }} />
-              <Text strong style={{ fontSize: '15px' }}>Поддержка</Text>
+              <CustomerServiceOutlined />
+              <Text strong>Поддержка</Text>
             </Space>
-            <RightOutlined style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }} />
+            <RightOutlined />
           </Button>
 
-          <Button
-            type="text"
-            block
-            style={{
-              height: '56px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '0 16px',
-              textAlign: 'left',
-            }}
-          >
+          <Button type="text" block>
             <Space>
-              <GiftOutlined style={{ fontSize: '20px' }} />
-              <Text strong style={{ fontSize: '15px' }}>Реферальная программа</Text>
+              <GiftOutlined />
+              <Text strong>Реферальная программа</Text>
             </Space>
-            <RightOutlined style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }} />
+            <RightOutlined />
           </Button>
 
-          <Button
-            type="text"
-            block
-            href="/settings"
-            style={{
-              height: '56px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '0 16px',
-              textAlign: 'left',
-            }}
-          >
+          <Button type="text" block href="/settings">
             <Space>
-              <SettingOutlined style={{ fontSize: '20px' }} />
-              <Text strong style={{ fontSize: '15px' }}>Настройки</Text>
+              <SettingOutlined />
+              <Text strong>Настройки</Text>
             </Space>
-            <RightOutlined style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }} />
+            <RightOutlined />
           </Button>
         </Space>
 
         {/* App Info */}
-        <div style={{ textAlign: 'center', paddingTop: '20px', paddingBottom: '8px' }}>
-          <Text type="secondary" style={{ fontSize: '13px', display: 'block' }}>USL версия 1.0.0</Text>
-          <Text type="secondary" style={{ fontSize: '13px', display: 'block', marginTop: '4px' }}>© 2025 UP Stream Lab</Text>
+        <div style={{ textAlign: "center", paddingTop: "20px" }}>
+          <Text type="secondary">USL версия 1.0.0</Text>
+          <br />
+          <Text type="secondary">© 2025 UP Stream Lab</Text>
         </div>
       </Space>
     </div>
