@@ -22,7 +22,8 @@ import {
   TeamOutlined,
 } from "@ant-design/icons"
 import { useEffect, useState } from "react"
-import { API_URL } from "../../lib/api"
+import { API_URL } from "@/lib/api"
+
 
 
 const { Title, Text } = Typography
