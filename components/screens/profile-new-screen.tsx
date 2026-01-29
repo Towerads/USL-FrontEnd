@@ -22,6 +22,8 @@ import {
   TeamOutlined,
 } from "@ant-design/icons"
 import { useEffect, useState } from "react"
+import { API_URL } from "../../lib/api"
+
 
 const { Title, Text } = Typography
 
@@ -33,53 +35,71 @@ type Advertiser = {
   created_at: string
 }
 
+type TgUser = {
+  id: number
+  first_name?: string
+  username?: string
+}
+
 export function ProfileNewScreen() {
   const [userType, setUserType] = useState<"advertiser" | "publisher">(
     "advertiser"
   )
   const [advertiser, setAdvertiser] = useState<Advertiser | null>(null)
-  const [tgUser, setTgUser] = useState<any>(null)
+  const [tgUser, setTgUser] = useState<TgUser | null>(null)
   const [loading, setLoading] = useState(true)
 
-  // 🔹 Получаем Telegram user
   useEffect(() => {
-    const tg = window.Telegram?.WebApp
-    if (!tg) return
+    console.log("INIT PROFILE SCREEN")
 
-    const user = tg.initDataUnsafe?.user
-    if (!user?.id) return
+    const tg = window.Telegram?.WebApp
+    let user: TgUser | null = null
+
+    if (tg?.initDataUnsafe?.user?.id) {
+      // ✅ Реальный Telegram
+      user = tg.initDataUnsafe.user
+      console.log("TG USER (REAL):", user)
+    } else {
+      // ⚠️ FALLBACK ДЛЯ БРАУЗЕРА
+      user = {
+        id: 123456789,
+        first_name: "Browser",
+        username: "debug_user",
+      }
+      console.warn("TG USER (FALLBACK):", user)
+    }
 
     setTgUser(user)
 
-    fetch("https://YOUR_BACKEND_URL/advertiser/me", {
+    fetch(`${API_URL}/advertiser/me`, {
       headers: {
         "X-TG-USER-ID": String(user.id),
       },
     })
-      .then((res) => res.json())
-      .then((data) => {
-        setAdvertiser(data.advertiser)
-        setUserType("advertiser") // пока только advertiser
+      .then((res) => {
+        if (!res.ok) throw new Error("HTTP " + res.status)
+        return res.json()
       })
-      .finally(() => setLoading(false))
+      .then((data) => {
+        console.log("BACKEND DATA:", data)
+        setAdvertiser(data.advertiser)
+      })
+      .catch((err) => {
+        console.error("FETCH ERROR:", err)
+      })
+      .finally(() => {
+        setLoading(false)
+      })
   }, [])
-
-  const handleUserTypeChange = (value: "advertiser" | "publisher") => {
-    // ❗ пока publisher не поддержан бекендом
-    setUserType(value)
-  }
 
   if (loading) {
     return <Spin fullscreen />
   }
 
   if (!advertiser || !tgUser) {
-    return <div>Ошибка загрузки профиля</div>
+    return <div style={{ padding: 20 }}>Ошибка загрузки профиля</div>
   }
 
-  // --------------------
-  // MAIN PROFILE SCREEN
-  // --------------------
   return (
     <div
       style={{
@@ -98,9 +118,11 @@ export function ProfileNewScreen() {
             style={{ marginBottom: "12px" }}
           />
           <Title level={3} style={{ margin: 0, fontWeight: 700 }}>
-            {tgUser.first_name}
+            {tgUser.first_name || "Без имени"}
           </Title>
-          <Text type="secondary">@{tgUser.username}</Text>
+          <Text type="secondary">
+            @{tgUser.username || tgUser.id}
+          </Text>
         </div>
 
         {/* Account Type */}
@@ -118,9 +140,9 @@ export function ProfileNewScreen() {
               }}
             >
               {userType === "advertiser" ? (
-                <RocketOutlined style={{ fontSize: "20px", color: "#1677ff" }} />
+                <RocketOutlined style={{ fontSize: 20, color: "#1677ff" }} />
               ) : (
-                <TeamOutlined style={{ fontSize: "20px", color: "#52c41a" }} />
+                <TeamOutlined style={{ fontSize: 20, color: "#52c41a" }} />
               )}
             </div>
 
@@ -131,7 +153,7 @@ export function ProfileNewScreen() {
 
               <Radio.Group
                 value={userType}
-                onChange={(e) => handleUserTypeChange(e.target.value)}
+                onChange={(e) => setUserType(e.target.value)}
                 style={{ width: "100%" }}
               >
                 <Space direction="vertical" style={{ width: "100%" }} size={8}>
@@ -145,45 +167,28 @@ export function ProfileNewScreen() {
           </div>
         </Card>
 
-        {/* Balance (пока без логики) */}
+        {/* Balance */}
         <div>
           <Text strong style={{ display: "block", marginBottom: "12px" }}>
             Баланс
           </Text>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "12px",
-            }}
-          >
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <Card>
               <Text type="secondary">Доступно</Text>
-              <div style={{ fontSize: "24px", fontWeight: 700 }}>0.00</div>
+              <div style={{ fontSize: 24, fontWeight: 700 }}>0.00</div>
               <Text type="secondary">USDT</Text>
             </Card>
             <Card>
               <Text type="secondary">Заморожено</Text>
-              <div style={{ fontSize: "24px", fontWeight: 700 }}>0.00</div>
+              <div style={{ fontSize: 24, fontWeight: 700 }}>0.00</div>
               <Text type="secondary">USDT</Text>
             </Card>
           </div>
         </div>
 
         {/* Actions */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "12px",
-          }}
-        >
-          <Button
-            type="primary"
-            icon={<ArrowUpOutlined />}
-            size="large"
-            block
-          >
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <Button type="primary" icon={<ArrowUpOutlined />} size="large" block>
             Пополнить
           </Button>
           <Button icon={<ArrowDownOutlined />} size="large" block>
@@ -221,7 +226,7 @@ export function ProfileNewScreen() {
         </Space>
 
         {/* App Info */}
-        <div style={{ textAlign: "center", paddingTop: "20px" }}>
+        <div style={{ textAlign: "center", paddingTop: 20 }}>
           <Text type="secondary">USL версия 1.0.0</Text>
           <br />
           <Text type="secondary">© 2025 UP Stream Lab</Text>

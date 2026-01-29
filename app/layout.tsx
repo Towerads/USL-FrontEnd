@@ -1,8 +1,12 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, ReactNode } from "react"
 
-export default function RootLayout({ children }) {
+export default function RootLayout({
+  children,
+}: {
+  children: ReactNode
+}) {
   useEffect(() => {
     const tg = window.Telegram?.WebApp
     if (!tg) return
@@ -10,7 +14,6 @@ export default function RootLayout({ children }) {
     tg.ready()
     tg.expand()
 
-    // сохраним пользователя глобально
     window.__TG_USER__ = tg.initDataUnsafe?.user
     console.log("TG USER:", window.__TG_USER__)
   }, [])
@@ -21,5 +24,4 @@ export default function RootLayout({ children }) {
     </html>
   )
 }
-
 
