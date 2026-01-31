@@ -33,7 +33,7 @@ type Creative = {
   created_at: string
 }
 
-export function CreativesNewScreen() {
+export function ProfileNewScreen() {
   const router = useRouter()
 
   const [activeTab, setActiveTab] = useState("active")
