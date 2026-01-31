@@ -3,118 +3,104 @@
 import {
   Card,
   Button,
-  Typography,
+  Avatar,
   Space,
-  Tabs,
-  Badge,
-  Row,
-  Col,
+  Typography,
+  Radio,
+  Divider,
   Spin,
-  Empty,
 } from "antd"
 import {
-  PlusOutlined,
-  ShoppingOutlined,
-  EyeOutlined,
+  UserOutlined,
+  ArrowUpOutlined,
+  ArrowDownOutlined,
+  CustomerServiceOutlined,
+  GiftOutlined,
+  SettingOutlined,
+  RightOutlined,
+  RocketOutlined,
+  TeamOutlined,
 } from "@ant-design/icons"
-import { useEffect, useMemo, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
+import { API_URL } from "@/lib/api"
+
+
 
 const { Title, Text } = Typography
 
-type Creative = {
+type Advertiser = {
   id: string
-  title?: string
-  type: string
-  media_url: string
-  click_url: string
-  duration: number | null
+  telegram_user_id: string
+  email: string
   status: string
   created_at: string
 }
 
-export function ProfileNewScreen() {
-  const router = useRouter()
+type TgUser = {
+  id: number
+  first_name?: string
+  username?: string
+}
 
-  const [activeTab, setActiveTab] = useState("active")
-  const [creatives, setCreatives] = useState<Creative[]>([])
+export function ProfileNewScreen() {
+  const [userType, setUserType] = useState<"advertiser" | "publisher">(
+    "advertiser"
+  )
+  const [advertiser, setAdvertiser] = useState<Advertiser | null>(null)
+  const [tgUser, setTgUser] = useState<TgUser | null>(null)
   const [loading, setLoading] = useState(true)
 
-  // --------------------
-  // LOAD FROM BACKEND
-  // --------------------
   useEffect(() => {
-    const tgUserId =
-      window.Telegram?.WebApp?.initDataUnsafe?.user?.id
+    console.log("INIT PROFILE SCREEN")
 
-    if (!tgUserId) return
+    const tg = window.Telegram?.WebApp
+    let user: TgUser | null = null
 
-    fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/advertiser/creatives`,
-      {
-        headers: {
-          "X-TG-USER-ID": String(tgUserId),
-        },
-        credentials: "include",
+    if (tg?.initDataUnsafe?.user?.id) {
+      // ✅ Реальный Telegram
+      user = tg.initDataUnsafe.user
+      console.log("TG USER (REAL):", user)
+    } else {
+      // ⚠️ FALLBACK ДЛЯ БРАУЗЕРА
+      user = {
+        id: 123456789,
+        first_name: "Browser",
+        username: "debug_user",
       }
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        setCreatives(data.creatives || [])
+      console.warn("TG USER (FALLBACK):", user)
+    }
+
+    setTgUser(user)
+
+    fetch(`${API_URL}/advertiser/me`, {
+      headers: {
+        "X-TG-USER-ID": String(user.id),
+      },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("HTTP " + res.status)
+        return res.json()
       })
-      .finally(() => setLoading(false))
+      .then((data) => {
+        console.log("BACKEND DATA:", data)
+        setAdvertiser(data.advertiser)
+      })
+      .catch((err) => {
+        console.error("FETCH ERROR:", err)
+      })
+      .finally(() => {
+        setLoading(false)
+      })
   }, [])
 
-  // --------------------
-  // GROUPING
-  // --------------------
-  const grouped = useMemo(() => {
-    return {
-      active: creatives.filter((c) =>
-        ["active", "approved"].includes(c.status)
-      ),
-      pending: creatives.filter((c) => c.status === "pending"),
-      drafts: creatives.filter((c) => c.status === "draft"),
-      completed: creatives.filter((c) =>
-        ["completed", "frozen"].includes(c.status)
-      ),
-    }
-  }, [creatives])
-
-  // --------------------
-  // STATS
-  // --------------------
-  const totalCount = creatives.length
-  const activeCount = grouped.active.length
-
-  // просмотры пока честно не считаем
-  const views = "—"
-
-  // --------------------
-  // STATUS BADGE
-  // --------------------
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "active":
-      case "approved":
-        return <Badge status="success" text="В работе" />
-      case "pending":
-        return <Badge status="processing" text="На проверке" />
-      case "draft":
-        return <Badge status="warning" text="Черновик" />
-      case "completed":
-      case "frozen":
-        return <Badge status="default" text="Завершен" />
-      case "rejected":
-        return <Badge status="error" text="Отклонён" />
-      default:
-        return null
-    }
+  if (loading) {
+    return <Spin fullscreen />
   }
 
-  // --------------------
-  // RENDER
-  // --------------------
+  if (!advertiser || !tgUser) {
+    return <div style={{ padding: 20 }}>Ошибка загрузки профиля</div>
+  }
+
   return (
     <div
       style={{
@@ -125,129 +111,127 @@ export function ProfileNewScreen() {
       }}
     >
       <Space direction="vertical" size={20} style={{ width: "100%" }}>
-        <Title level={2} style={{ margin: 0 }}>
-          Креативы
-        </Title>
+        {/* Header */}
+        <div style={{ textAlign: "center", paddingTop: "20px" }}>
+          <Avatar
+            size={80}
+            icon={<UserOutlined />}
+            style={{ marginBottom: "12px" }}
+          />
+          <Title level={3} style={{ margin: 0, fontWeight: 700 }}>
+            {tgUser.first_name || "Без имени"}
+          </Title>
+          <Text type="secondary">
+            @{tgUser.username || tgUser.id}
+          </Text>
+        </div>
 
-        {/* STATS */}
+        {/* Account Type */}
         <Card>
-          <Title level={5}>Общая статистика</Title>
-          <Row gutter={16}>
-            <Col span={8}>
-              <Text type="secondary">Всего</Text>
-              <div style={{ fontSize: 18, fontWeight: 600 }}>
-                {totalCount}
-              </div>
-            </Col>
-            <Col span={8}>
-              <Text type="secondary">Активных</Text>
-              <div
-                style={{
-                  fontSize: 18,
-                  fontWeight: 600,
-                  color: "#52c41a",
-                }}
+          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+            <div
+              style={{
+                width: "44px",
+                height: "44px",
+                borderRadius: "12px",
+                background: "rgba(22, 119, 255, 0.1)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {userType === "advertiser" ? (
+                <RocketOutlined style={{ fontSize: 20, color: "#1677ff" }} />
+              ) : (
+                <TeamOutlined style={{ fontSize: 20, color: "#52c41a" }} />
+              )}
+            </div>
+
+            <div style={{ flex: 1 }}>
+              <Text strong style={{ display: "block", marginBottom: "8px" }}>
+                Тип аккаунта
+              </Text>
+
+              <Radio.Group
+                value={userType}
+                onChange={(e) => setUserType(e.target.value)}
+                style={{ width: "100%" }}
               >
-                {activeCount}
-              </div>
-            </Col>
-            <Col span={8}>
-              <Text type="secondary">Просмотры</Text>
-              <div style={{ fontSize: 18, fontWeight: 600 }}>
-                {views}
-              </div>
-            </Col>
-          </Row>
+                <Space direction="vertical" style={{ width: "100%" }} size={8}>
+                  <Radio value="advertiser">Рекламодатель</Radio>
+                  <Radio value="publisher" disabled>
+                    Паблишер (скоро)
+                  </Radio>
+                </Space>
+              </Radio.Group>
+            </div>
+          </div>
         </Card>
 
-        {/* ACTIONS */}
+        {/* Balance */}
+        <div>
+          <Text strong style={{ display: "block", marginBottom: "12px" }}>
+            Баланс
+          </Text>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <Card>
+              <Text type="secondary">Доступно</Text>
+              <div style={{ fontSize: 24, fontWeight: 700 }}>0.00</div>
+              <Text type="secondary">USDT</Text>
+            </Card>
+            <Card>
+              <Text type="secondary">Заморожено</Text>
+              <div style={{ fontSize: 24, fontWeight: 700 }}>0.00</div>
+              <Text type="secondary">USDT</Text>
+            </Card>
+          </div>
+        </div>
+
+        {/* Actions */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            size="large"
-            block
-            onClick={() => router.push("/campaign/create")}
-          >
-            Создать креатив
+          <Button type="primary" icon={<ArrowUpOutlined />} size="large" block>
+            Пополнить
           </Button>
-          <Button
-            icon={<ShoppingOutlined />}
-            size="large"
-            block
-            onClick={() => router.push("/campaign/create")}
-          >
-            Заказать креатив
+          <Button icon={<ArrowDownOutlined />} size="large" block>
+            Вывести
           </Button>
         </div>
 
-        {/* TABS */}
-        <Tabs
-          activeKey={activeTab}
-          onChange={setActiveTab}
-          items={[
-            {
-              key: "active",
-              label: `В работе (${grouped.active.length})`,
-            },
-            {
-              key: "pending",
-              label: `На проверке (${grouped.pending.length})`,
-            },
-            {
-              key: "drafts",
-              label: `Черновики (${grouped.drafts.length})`,
-            },
-            {
-              key: "completed",
-              label: `Завершённые (${grouped.completed.length})`,
-            },
-          ]}
-        />
+        <Divider />
 
-        {/* LIST */}
-        {loading ? (
-          <Spin />
-        ) : grouped[activeTab as keyof typeof grouped].length === 0 ? (
-          <Empty description="Пока пусто" />
-        ) : (
-          <Space direction="vertical" size={12} style={{ width: "100%" }}>
-            {grouped[activeTab as keyof typeof grouped].map((c) => (
-              <Card key={c.id} hoverable>
-                <Space direction="vertical" style={{ width: "100%" }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <div>
-                      <Title level={5} style={{ margin: 0 }}>
-                        {c.title || "Без названия"}
-                      </Title>
-                      <Text type="secondary">{c.type}</Text>
-                    </div>
-                    {getStatusBadge(c.status)}
-                  </div>
+        {/* Menu */}
+        <Space direction="vertical" size={12} style={{ width: "100%" }}>
+          <Button type="text" block href="/support-chat">
+            <Space>
+              <CustomerServiceOutlined />
+              <Text strong>Поддержка</Text>
+            </Space>
+            <RightOutlined />
+          </Button>
 
-                  {(c.status === "active" ||
-                    c.status === "approved") && (
-                    <Space size={6}>
-                      <EyeOutlined />
-                      <Text type="secondary">идёт показ</Text>
-                    </Space>
-                  )}
+          <Button type="text" block>
+            <Space>
+              <GiftOutlined />
+              <Text strong>Реферальная программа</Text>
+            </Space>
+            <RightOutlined />
+          </Button>
 
-                  {c.status === "draft" && (
-                    <Button type="primary" block>
-                      Продолжить
-                    </Button>
-                  )}
-                </Space>
-              </Card>
-            ))}
-          </Space>
-        )}
+          <Button type="text" block href="/settings">
+            <Space>
+              <SettingOutlined />
+              <Text strong>Настройки</Text>
+            </Space>
+            <RightOutlined />
+          </Button>
+        </Space>
+
+        {/* App Info */}
+        <div style={{ textAlign: "center", paddingTop: 20 }}>
+          <Text type="secondary">USL версия 1.0.0</Text>
+          <br />
+          <Text type="secondary">© 2025 UP Stream Lab</Text>
+        </div>
       </Space>
     </div>
   )
