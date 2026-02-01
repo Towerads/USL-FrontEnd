@@ -23,6 +23,32 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { API_URL } from "@/lib/api"
 
+
+async function uploadToCloudinary(file: File) {
+  const formData = new FormData()
+  formData.append("file", file)
+  formData.append(
+    "upload_preset",
+    process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!
+  )
+
+  const res = await fetch(
+    `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/auto/upload`,
+    {
+      method: "POST",
+      body: formData,
+    }
+  )
+
+  if (!res.ok) {
+    throw new Error("Cloudinary upload failed")
+  }
+
+  const data = await res.json()
+  return data.secure_url as string
+}
+
+
 const { Title, Text, Paragraph } = Typography
 const { TextArea } = Input
 
@@ -78,18 +104,46 @@ export function CampaignCreateScreen() {
         }
       }
 
-      const typeToSend =
-        creativeOption === "own"
-          ? "video"
-          : creativeType
+
+      let typeToSend = creativeType
+
+      if (creativeOption === "own") {
+        const file = fileList[0]?.originFileObj as File
+
+        if (!file) {
+        message.error("Файл не найден")
+        return
+      }
+
+      if (file.type.startsWith("image/")) {
+        typeToSend = "banner"
+      } else if (file.type.startsWith("video/")) {
+        typeToSend = "video"
+      } else {
+      message.error("Неподдерживаемый тип файла")
+      return
+    }
+  }
+
+      
 
       // ВАЖНО: без заглушек "uploaded_later" — отправляем то, что есть.
       // Сейчас у тебя нет загрузки файла на сервер, поэтому берём имя файла как media_url.
       // Это не мок-данные, а реальное значение, которое у тебя есть на фронте.
-      const mediaUrlToSend =
-        creativeOption === "own"
-          ? String(fileList[0]?.name || "")
-          : `ORDER:${creativeType}`
+      let mediaUrlToSend = ""
+
+      if (creativeOption === "own") {
+        const file = fileList[0]?.originFileObj
+        if (!file) {
+          message.error("Файл не найден")
+          return
+        }
+
+        mediaUrlToSend = await uploadToCloudinary(file)
+      } else {
+        mediaUrlToSend = `ORDER:${creativeType}`
+      }
+
 
       const clickUrlToSend =
         "https://example.com"
