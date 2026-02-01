@@ -33,7 +33,7 @@ async function uploadToCloudinary(file: File) {
   )
 
   const res = await fetch(
-    `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC1_CLOUDINARY_CLOUD_NAME}/auto/upload`,
+    `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/auto/upload`,
     {
       method: "POST",
       body: formData,
