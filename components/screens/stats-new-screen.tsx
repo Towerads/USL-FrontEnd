@@ -1,195 +1,222 @@
-"use client"
+"use client";
 
-import { Card, Typography, Space, Tabs, Row, Col, Empty } from 'antd';
-import { EyeOutlined, DollarOutlined, RiseOutlined, AimOutlined } from '@ant-design/icons';
-import { useState } from 'react';
+import { Card, Typography, Space, Tabs, Row, Col, Empty } from "antd";
+import {
+  EyeOutlined,
+  DollarOutlined,
+  RiseOutlined,
+  AimOutlined,
+} from "@ant-design/icons";
+import { useEffect, useState } from "react";
 
 const { Title, Text } = Typography;
 
+const API_BASE = "https://towerads-backend.onrender.com";
+
 export function StatsNewScreen() {
-  const [activeTab, setActiveTab] = useState('advertiser');
+  const [activeTab, setActiveTab] = useState("advertiser");
+
+  const [advertiserStats, setAdvertiserStats] = useState<any>(null);
+  const [publisherStats, setPublisherStats] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+
+  // 🔹 рекламодатель
+  const loadAdvertiserStats = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/admin/stats`, {
+        credentials: "include",
+      });
+      const data = await res.json();
+      setAdvertiserStats(data);
+    } catch (e) {
+      console.error("advertiser stats error", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 🔹 паблишер (агрегат по placements)
+  const loadPublisherStats = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/admin/publishers`, {
+        credentials: "include",
+      });
+      const data = await res.json();
+
+      let impressions = 0;
+      let revenue = 0;
+
+      data.publishers?.forEach((p: any) => {
+        impressions += Number(p.impressions || 0);
+        revenue += Number(p.revenue || 0);
+      });
+
+      const cpm =
+        impressions > 0 ? (revenue / impressions) * 1000 : 0;
+
+      setPublisherStats({
+        impressions,
+        revenue,
+        cpm,
+      });
+    } catch (e) {
+      console.error("publisher stats error", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "advertiser") loadAdvertiserStats();
+    if (activeTab === "publisher") loadPublisherStats();
+  }, [activeTab]);
 
   return (
-    <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto', paddingBottom: '100px' }}>
-      <Space direction="vertical" size={20} style={{ width: '100%' }}>
-        {/* Header */}
-        <Title level={2} style={{ margin: 0, fontWeight: 700, fontSize: '28px' }}>
+    <div
+      style={{
+        padding: "20px",
+        maxWidth: "600px",
+        margin: "0 auto",
+        paddingBottom: "100px",
+      }}
+    >
+      <Space direction="vertical" size={20} style={{ width: "100%" }}>
+        <Title level={2} style={{ margin: 0, fontWeight: 700, fontSize: "28px" }}>
           Статистика
         </Title>
 
-        {/* Tabs */}
         <Tabs
           activeKey={activeTab}
           onChange={setActiveTab}
           items={[
-            { key: 'advertiser', label: 'Рекламодатель' },
-            { key: 'publisher', label: 'Паблишер' },
-            { key: 'channel_owner', label: 'Владелец канала', disabled: true },
-            { key: 'channel_buyer', label: 'Покупатель размещений', disabled: true },
+            { key: "advertiser", label: "Рекламодатель" },
+            { key: "publisher", label: "Паблишер" },
+            { key: "channel_owner", label: "Владелец канала", disabled: true },
+            { key: "channel_buyer", label: "Покупатель размещений", disabled: true },
           ]}
         />
 
-        {/* Advertiser Stats */}
-        {activeTab === 'advertiser' && (
+        {/* ================= ADVERTISER ================= */}
+        {activeTab === "advertiser" && (
           <>
-            <Card>
-              <Title level={5} style={{ marginBottom: '16px', fontWeight: 700, fontSize: '16px' }}>
+            <Card loading={loading}>
+              <Title level={5} style={{ marginBottom: 16 }}>
                 Общая статистика за месяц
               </Title>
               <Row gutter={16}>
                 <Col span={12}>
-                  <Space direction="vertical" size={0} style={{ marginBottom: '16px' }}>
+                  <Space direction="vertical">
                     <Space size="small">
-                      <EyeOutlined style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }} />
-                      <Text type="secondary" style={{ fontSize: '12px' }}>Показы</Text>
+                      <EyeOutlined />
+                      <Text type="secondary">Показы</Text>
                     </Space>
-                    <Text strong style={{ fontSize: '20px' }}>134.7K</Text>
+                    <Text strong style={{ fontSize: 20 }}>
+                      {advertiserStats?.impressions ?? 0}
+                    </Text>
                   </Space>
                 </Col>
+
                 <Col span={12}>
-                  <Space direction="vertical" size={0} style={{ marginBottom: '16px' }}>
+                  <Space direction="vertical">
                     <Space size="small">
-                      <AimOutlined style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }} />
-                      <Text type="secondary" style={{ fontSize: '12px' }}>Клики</Text>
+                      <AimOutlined />
+                      <Text type="secondary">Клики</Text>
                     </Space>
-                    <Text strong style={{ fontSize: '20px' }}>4.1K</Text>
+                    <Text strong style={{ fontSize: 20 }}>
+                      {advertiserStats?.clicks ?? 0}
+                    </Text>
                   </Space>
                 </Col>
+
                 <Col span={12}>
-                  <Space direction="vertical" size={0}>
+                  <Space direction="vertical">
                     <Space size="small">
-                      <RiseOutlined style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }} />
-                      <Text type="secondary" style={{ fontSize: '12px' }}>CTR</Text>
+                      <RiseOutlined />
+                      <Text type="secondary">CTR</Text>
                     </Space>
-                    <Text strong style={{ fontSize: '20px', color: '#1677ff' }}>3.04%</Text>
+                    <Text strong style={{ fontSize: 20, color: "#1677ff" }}>
+                      {advertiserStats?.impressions
+                        ? (
+                            (advertiserStats.clicks /
+                              advertiserStats.impressions) *
+                            100
+                          ).toFixed(2)
+                        : "0.00"}
+                      %
+                    </Text>
                   </Space>
                 </Col>
+
                 <Col span={12}>
-                  <Space direction="vertical" size={0}>
+                  <Space direction="vertical">
                     <Space size="small">
-                      <DollarOutlined style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }} />
-                      <Text type="secondary" style={{ fontSize: '12px' }}>Потрачено</Text>
+                      <DollarOutlined />
+                      <Text type="secondary">Потрачено</Text>
                     </Space>
-                    <Text strong style={{ fontSize: '20px', color: '#faad14' }}>1,234 USDT</Text>
+                    <Text strong style={{ fontSize: 20, color: "#faad14" }}>
+                      {Number(advertiserStats?.revenue || 0).toFixed(2)} USDT
+                    </Text>
                   </Space>
                 </Col>
               </Row>
             </Card>
-
-            <Card>
-              <Title level={5} style={{ marginBottom: '12px', fontWeight: 700, fontSize: '16px' }}>
-                Активные кампании
-              </Title>
-              <Space direction="vertical" size={12} style={{ width: '100%' }}>
-                {[
-                  { name: 'Новогодняя распродажа', impressions: 45230, clicks: 1234, ctr: '2.73%' },
-                  { name: 'Промо акция зима', impressions: 32100, clicks: 890, ctr: '2.77%' },
-                ].map((campaign, idx) => (
-                  <div key={idx} style={{ padding: '12px', background: '#f5f5f5', borderRadius: '8px' }}>
-                    <Text strong style={{ fontSize: '14px', display: 'block', marginBottom: '8px' }}>
-                      {campaign.name}
-                    </Text>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Text type="secondary" style={{ fontSize: '13px' }}>
-                        Показы: {campaign.impressions.toLocaleString()}
-                      </Text>
-                      <Text type="secondary" style={{ fontSize: '13px' }}>
-                        Клики: {campaign.clicks}
-                      </Text>
-                      <Text type="secondary" style={{ fontSize: '13px' }}>
-                        CTR: {campaign.ctr}
-                      </Text>
-                    </div>
-                  </div>
-                ))}
-              </Space>
-            </Card>
           </>
         )}
 
-        {/* Publisher Stats */}
-        {activeTab === 'publisher' && (
+        {/* ================= PUBLISHER ================= */}
+        {activeTab === "publisher" && (
           <>
-            <Card>
-              <Title level={5} style={{ marginBottom: '16px', fontWeight: 700, fontSize: '16px' }}>
+            <Card loading={loading}>
+              <Title level={5} style={{ marginBottom: 16 }}>
                 Общая статистика за месяц
               </Title>
               <Row gutter={16}>
                 <Col span={12}>
-                  <Space direction="vertical" size={0} style={{ marginBottom: '16px' }}>
+                  <Space direction="vertical">
                     <Space size="small">
-                      <EyeOutlined style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }} />
-                      <Text type="secondary" style={{ fontSize: '12px' }}>Показы</Text>
+                      <EyeOutlined />
+                      <Text type="secondary">Показы</Text>
                     </Space>
-                    <Text strong style={{ fontSize: '20px' }}>145.7K</Text>
+                    <Text strong style={{ fontSize: 20 }}>
+                      {publisherStats?.impressions ?? 0}
+                    </Text>
                   </Space>
                 </Col>
+
                 <Col span={12}>
-                  <Space direction="vertical" size={0} style={{ marginBottom: '16px' }}>
+                  <Space direction="vertical">
                     <Space size="small">
-                      <DollarOutlined style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }} />
-                      <Text type="secondary" style={{ fontSize: '12px' }}>Доход</Text>
+                      <DollarOutlined />
+                      <Text type="secondary">Доход</Text>
                     </Space>
-                    <Text strong style={{ fontSize: '20px', color: '#52c41a' }}>+391.30 USDT</Text>
+                    <Text strong style={{ fontSize: 20, color: "#52c41a" }}>
+                      {Number(publisherStats?.revenue || 0).toFixed(2)} USDT
+                    </Text>
                   </Space>
                 </Col>
+
                 <Col span={12}>
-                  <Space direction="vertical" size={0}>
+                  <Space direction="vertical">
                     <Space size="small">
-                      <RiseOutlined style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }} />
-                      <Text type="secondary" style={{ fontSize: '12px' }}>CPM</Text>
+                      <RiseOutlined />
+                      <Text type="secondary">CPM</Text>
                     </Space>
-                    <Text strong style={{ fontSize: '20px', color: '#1677ff' }}>$2.68</Text>
-                  </Space>
-                </Col>
-                <Col span={12}>
-                  <Space direction="vertical" size={0}>
-                    <Text type="secondary" style={{ fontSize: '12px' }}>Просмотры</Text>
-                    <Text strong style={{ fontSize: '20px' }}>89.2K</Text>
+                    <Text strong style={{ fontSize: 20, color: "#1677ff" }}>
+                      {Number(publisherStats?.cpm || 0).toFixed(2)}
+                    </Text>
                   </Space>
                 </Col>
               </Row>
             </Card>
-
-            <Card>
-              <Title level={5} style={{ marginBottom: '12px', fontWeight: 700, fontSize: '16px' }}>
-                Активные каналы
-              </Title>
-              <Space direction="vertical" size={12} style={{ width: '100%' }}>
-                {[
-                  { name: 'Технологии будущего', impressions: 89450, revenue: '234.50' },
-                  { name: 'Бизнес идеи', impressions: 56230, revenue: '156.80' },
-                ].map((channel, idx) => (
-                  <div key={idx} style={{ padding: '12px', background: '#f5f5f5', borderRadius: '8px' }}>
-                    <Text strong style={{ fontSize: '14px', display: 'block', marginBottom: '8px' }}>
-                      {channel.name}
-                    </Text>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Text type="secondary" style={{ fontSize: '13px' }}>
-                        Показы: {channel.impressions.toLocaleString()}
-                      </Text>
-                      <Text style={{ fontSize: '13px', color: '#52c41a', fontWeight: 600 }}>
-                        +{channel.revenue} USDT
-                      </Text>
-                    </div>
-                  </div>
-                ))}
-              </Space>
-            </Card>
           </>
         )}
 
-        {/* Coming Soon for other tabs */}
-        {(activeTab === 'channel_owner' || activeTab === 'channel_buyer') && (
+        {(activeTab === "channel_owner" ||
+          activeTab === "channel_buyer") && (
           <Card>
-            <Empty
-              description={
-                <Space direction="vertical" size={12}>
-                  <Text strong style={{ fontSize: '16px' }}>Скоро</Text>
-                  <Text type="secondary">Этот раздел находится в разработке</Text>
-                </Space>
-              }
-            />
+            <Empty description="Раздел в разработке" />
           </Card>
         )}
       </Space>
