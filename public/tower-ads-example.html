@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tower Ads SDK v3.2 - Example</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .version {
+            color: #667eea;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .provider-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .provider-btn {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+            font-size: 13px;
+            padding: 10px 16px;
+        }
+
+        .provider-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .provider-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .log {
+            background: #1a1a1a;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            line-height: 1.5;
+        }
+
+        .log-time {
+            color: #888;
+        }
+
+        .log-success {
+            color: #0f0;
+        }
+
+        .log-error {
+            color: #f55;
+        }
+
+        .log-info {
+            color: #0ff;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        label {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .status {
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-top: 10px;
+        }
+
+        .status.ready {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.loading {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🎯 Tower Ads SDK</h1>
+        <div class="version">v3.2 - Mediation Demo</div>
+
+        <!-- Provider Selection -->
+        <div class="section">
+            <div class="section-title">
+                📺 Выберите провайдера
+                <span class="badge" id="currentProvider">AUTO</span>
+            </div>
+            <div class="provider-grid">
+                <button class="provider-btn active" onclick="selectProvider(null)">
+                    🔄 AUTO
+                </button>
+                <button class="provider-btn" onclick="selectProvider('tower')">
+                    🏢 Tower
+                </button>
+                <button class="provider-btn" onclick="selectProvider('monetag')">
+                    💰 Monetag
+                </button>
+                <button class="provider-btn" onclick="selectProvider('nygma')">
+                    🎮 Nygma
+                </button>
+                <button class="provider-btn" onclick="selectProvider('tads')">
+                    🎯 TADS
+                </button>
+                <button class="provider-btn" onclick="selectProvider('adsonar')">
+                    🔊 AdSonar
+                </button>
+                <button class="provider-btn" onclick="selectProvider('adexium')">
+                    💎 Adexium
+                </button>
+            </div>
+        </div>
+
+        <!-- Options -->
+        <div class="section">
+            <div class="section-title">⚙️ Настройки</div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="debugMode" onchange="updateDebugMode()">
+                <label for="debugMode">Debug режим (показывать консоль в iframe)</label>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="section">
+            <div class="section-title">🎬 Действия</div>
+            <div class="controls">
+                <button onclick="loadAd()" id="loadBtn">
+                    📥 Загрузить рекламу
+                </button>
+                <button onclick="showAd()" id="showBtn" disabled>
+                    📺 Показать рекламу
+                </button>
+            </div>
+            <button onclick="loadAndShow()" style="margin-top: 10px;">
+                🚀 Загрузить и показать
+            </button>
+            <button onclick="getStats()"
+                style="margin-top: 10px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                📊 Получить статистику
+            </button>
+        </div>
+
+        <!-- Status -->
+        <div id="status" class="status ready">
+            ✅ SDK готов к использованию
+        </div>
+
+        <!-- Log -->
+        <div class="section">
+            <div class="section-title">📋 Лог событий</div>
+            <div class="log" id="log"></div>
+        </div>
+    </div>
+
+    <!-- Load Tower Ads SDK -->
+    <script src="https://tower-ton.com/tower-ads-v3.js"></script>
+
+    <script>
+        // ============== STATE ==============
+        let towerAds = null;
+        let selectedProvider = null;
+        let debugMode = false;
+
+        // ============== LOGGING ==============
+        function log(message, type = 'info') {
+            const logEl = document.getElementById('log');
+            const time = new Date().toLocaleTimeString();
+            const colors = {
+                info: 'log-info',
+                success: 'log-success',
+                error: 'log-error'
+            };
+
+            const entry = document.createElement('div');
+            entry.className = 'log-entry ' + colors[type];
+            entry.innerHTML = `<span class="log-time">[${time}]</span> ${message}`;
+
+            logEl.appendChild(entry);
+            logEl.scrollTop = logEl.scrollHeight;
+
+            console.log(`[TowerAds Demo] ${message}`);
+        }
+
+        // ============== STATUS ==============
+        function setStatus(message, type = 'ready') {
+            const statusEl = document.getElementById('status');
+            const icons = {
+                ready: '✅',
+                loading: '⏳',
+                error: '❌'
+            };
+            statusEl.className = 'status ' + type;
+            statusEl.textContent = icons[type] + ' ' + message;
+        }
+
+        // ============== PROVIDER SELECTION ==============
+        function selectProvider(provider) {
+            selectedProvider = provider;
+
+            // Update UI
+            document.querySelectorAll('.provider-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Update badge
+            const badge = document.getElementById('currentProvider');
+            badge.textContent = provider ? provider.toUpperCase() : 'AUTO';
+
+            log(`Выбран провайдер: ${provider || 'AUTO (от бэкенда)'}`, 'info');
+
+            // Reset SDK
+            if (towerAds) {
+                towerAds.setTestProvider(provider);
+            }
+        }
+
+        // ============== DEBUG MODE ==============
+        function updateDebugMode() {
+            debugMode = document.getElementById('debugMode').checked;
+            log(`Debug режим: ${debugMode ? 'включен' : 'выключен'}`, 'info');
+        }
+
+        // ============== INITIALIZE SDK ==============
+        function initSDK() {
+            log('🚀 Инициализация Tower Ads SDK v3.2...', 'info');
+
+            towerAds = new TowerAds({
+                apiKey: 'tower_test_123',
+                placementId: 'main',
+                apiUrl: 'https://towerads-backend.onrender.com/api/tower-ads',
+                adFrameUrl: window.location.origin + '/ad-frame.html',
+                logoUrl: null, // Используем дефолтный логотип
+                debug: debugMode,
+                testProvider: selectedProvider,
+
+                // Callbacks
+                onAdLoaded: function (provider) {
+                    log(`✅ Реклама загружена: ${provider}`, 'success');
+                    setStatus('Реклама загружена, готова к показу', 'ready');
+                    document.getElementById('showBtn').disabled = false;
+                },
+
+                onAdShown: function () {
+                    log('📺 Реклама показывается...', 'info');
+                    setStatus('Реклама показывается', 'loading');
+                },
+
+                onAdClosed: function () {
+                    log('❌ Реклама закрыта пользователем', 'info');
+                    setStatus('Реклама закрыта', 'ready');
+                    document.getElementById('showBtn').disabled = true;
+                },
+
+                onRewardEarned: function (reward) {
+                    log(`🎁 Награда получена! Provider: ${reward.provider}, Amount: ${reward.amount}`, 'success');
+                    setStatus('Награда получена!', 'ready');
+
+                    // Здесь можно отправить награду на бэкенд
+                    log('📤 Отправка награды на бэкенд...', 'info');
+                    setTimeout(() => {
+                        log('✅ Награда успешно начислена', 'success');
+                    }, 500);
+                },
+
+                onError: function (error) {
+                    log(`❌ Ошибка: ${error.message}`, 'error');
+                    setStatus('Ошибка: ' + error.message, 'error');
+                    document.getElementById('showBtn').disabled = true;
+                },
+
+                onProviderSelected: function (provider) {
+                    log(`🎯 Провайдер выбран: ${provider}`, 'info');
+                }
+            });
+
+            log('✅ SDK инициализирован', 'success');
+        }
+
+        // ============== LOAD AD ==============
+        async function loadAd() {
+            if (!towerAds) {
+                initSDK();
+            }
+
+            log('📥 Загрузка рекламы...', 'info');
+            setStatus('Загрузка рекламы...', 'loading');
+            document.getElementById('loadBtn').disabled = true;
+
+            try {
+                await towerAds.loadAd();
+                document.getElementById('loadBtn').disabled = false;
+            } catch (error) {
+                log(`❌ Ошибка загрузки: ${error.message}`, 'error');
+                setStatus('Ошибка загрузки', 'error');
+                document.getElementById('loadBtn').disabled = false;
+            }
+        }
+
+        // ============== SHOW AD ==============
+        async function showAd() {
+            log('📺 Показ рекламы...', 'info');
+            setStatus('Показ рекламы...', 'loading');
+            document.getElementById('showBtn').disabled = true;
+
+            try {
+                const result = await towerAds.showAd();
+                log(`✅ Реклама завершена: ${JSON.stringify(result)}`, 'success');
+            } catch (error) {
+                log(`❌ Ошибка показа: ${error.message}`, 'error');
+                setStatus('Ошибка показа', 'error');
+            }
+        }
+
+        // ============== LOAD AND SHOW ==============
+        async function loadAndShow() {
+            if (!towerAds) {
+                initSDK();
+            }
+
+            log('🚀 Загрузка и показ рекламы...', 'info');
+            setStatus('Загрузка и показ рекламы...', 'loading');
+
+            const loadBtn = document.getElementById('loadBtn');
+            const showBtn = document.getElementById('showBtn');
+            loadBtn.disabled = true;
+            showBtn.disabled = true;
+
+            try {
+                const result = await towerAds.loadAndShow();
+                log(`✅ Реклама завершена: ${JSON.stringify(result)}`, 'success');
+                loadBtn.disabled = false;
+            } catch (error) {
+                log(`❌ Ошибка: ${error.message}`, 'error');
+                setStatus('Ошибка: ' + error.message, 'error');
+                loadBtn.disabled = false;
+            }
+        }
+
+        // ============== GET STATS ==============
+        async function getStats() {
+            if (!towerAds) {
+                initSDK();
+            }
+
+            log('📊 Получение статистики...', 'info');
+            setStatus('Загрузка статистики...', 'loading');
+
+            try {
+                const stats = await towerAds.getStats();
+                log('✅ Статистика получена:', 'success');
+                log(`📈 Requests: ${stats.requests}`, 'info');
+                log(`📺 Impressions: ${stats.impressions}`, 'info');
+                log(`👆 Clicks: ${stats.clicks}`, 'info');
+                log(`💰 Revenue: $${stats.revenue}`, 'success');
+                log(`💸 Cost: $${stats.cost}`, 'info');
+                log(`📊 eCPM: $${stats.ecpm}`, 'success');
+                setStatus('Статистика загружена', 'ready');
+            } catch (error) {
+                log(`❌ Ошибка получения статистики: ${error.message}`, 'error');
+                setStatus('Ошибка получения статистики', 'error');
+            }
+        }
+
+        // ============== INIT ==============
+        window.addEventListener('load', function () {
+            log('🎉 Tower Ads SDK Demo загружен', 'success');
+            log('💡 Выберите провайдера и нажмите "Загрузить и показать"', 'info');
+            log('💡 Включите Debug режим для просмотра логов в iframe', 'info');
+        });
+    </script>
+</body>
+
+</html>
